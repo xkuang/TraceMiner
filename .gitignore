@@ -1,0 +1,9 @@
+*.o
+*.trc
+*.user
+*.user.*
+errors.txt
+output.txt
+Debug/TraceMiner
+Release/TraceMiner
+

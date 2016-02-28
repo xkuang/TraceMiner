@@ -1,0 +1,43 @@
+<h1 id="trace-miner">Trace Miner</h1>
+<p>Trace Miner is a utility that scans an Oracle 10046 trace file which has binds included, and for each &quot;dep=0&quot; SQL statement detected - ie Application SQL, will print out the SQL statement with the binds replaced by the actual values used at EXEC time.</p>
+<p>The utility reads from stdin, writes its report to stdout, and any other bumff gets written to stderr - so you can keep the desired output separate from the errors, warnings etc. If you run this with the <code>--verbose</code> or <code>-v</code> option, there <em>will</em> be a <em>lot</em> of text output to the stderr channel. You have been warned. The stderr channel will be populated with the full contents of the trace file plus lots of additional debugging/tracing messages.</p>
+<p>Email: <script type="text/javascript">
+<!--
+h='&#100;&#x75;&#110;&#98;&#x61;&#114;&#x2d;&#x69;&#116;&#46;&#x63;&#x6f;&#46;&#x75;&#x6b;';a='&#64;';n='&#110;&#x6f;&#114;&#x6d;&#x61;&#110;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#110;&#x6f;&#114;&#x6d;&#x61;&#110;&#32;&#x61;&#116;&#32;&#100;&#x75;&#110;&#98;&#x61;&#114;&#x2d;&#x69;&#116;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#32;&#100;&#x6f;&#116;&#32;&#x75;&#x6b;</noscript>.</p>
+<h2 id="copyright">Copyright</h2>
+<p>Copyright (c) Norman Dunbar, 2016.</p>
+<h2 id="license">License</h2>
+<p>There is no license, just use it and abuse it as you see fit. Just leave my copyright messages untouched, that's the only requirement! ;-)</p>
+<h2 id="execution">Execution</h2>
+<p><code>TraceMiner [options] &lt;trace_file.trc [ &gt;report_file.txt ] [ 2&gt;error_file.txt ]</code></p>
+<h3 id="options">Options</h3>
+<ul>
+<li>--verbose | -v : Produces lots of output to the stderr channel. Best avoided!</li>
+<li>--help | -h : Or any other incorrect option, displays brief help to the stdout channel.</li>
+</ul>
+<h2 id="compiling">Compiling</h2>
+<p>Before compiling, check the section below on configuration. It might prove useful!</p>
+<p>Once you have decided on your configuration, it's a simple case of changing into the directory where the <code>Makefile</code> is to be found and running the <code>make</code> command. When complete there will be an executable file named <code>TraceMiner</code> in your current directory.</p>
+<p>There are two folders, <code>Debug</code> and <code>Release</code> with a suitable <code>Makefile</code> in each. The latter is what you should normally be running but in the event that you encounter errors, the former might be useful, if running in <code>--verbose</code> mode doesn't help!</p>
+<h2 id="configuration">Configuration</h2>
+<p>There are a few options that you can configure. All are present in the file <code>config.h</code> and this file should be edited to suit your system. The options are:</p>
+<ul>
+<li><p>MAXCURSORSIZE : Default 20. This defines the length of the text making up a cursor id in a trace file. These used to be numeric, starting from 1 and incrementing, but from 9i, I think, Oracle changed to using a much larger cursor id. On Linux, at least at Oracle version 11.2.0.2, cursor ids are '#140136345356328' and this is 16 characters. On AIX with Oracle 11.2.0.3, a cursor id is '#4574461088' which is only 11 characters. Other systems may differ, so this option defaults to 20 and should be good enough. Change it if you get a message telling you that it needs changing. The message will hint at a suitable value, to save you counting digits!</p></li>
+<li><p>MAXBINDS : Default 50. This defines the maximum number of bind variables that can occur in any one statement. If you see a message telling you to change it, you will be advised of the minimum value that it needs setting to, based on the SQL that broke the current settings though - it there's another SQL further down the trace file with more, then you will get the same error again.</p></li>
+<li><p>MAXBINDSIZE : Default 50. This defines the maximum number of characters that will be output for each bind value when an SQL statement's EXEC line is detected in the trace file. Having this set too low might cause you to miss some important data while having it too high will waste space. Any bind value longer than this setting is simply truncated in the output - it will not stop the utility from running, unlike the two options above.</p></li>
+</ul>
+<h2 id="bind-variable-types">Bind Variable Types</h2>
+<ul>
+<li><p>Data type 1 = VARCHAR2 or NVARCHAR2. Oracle uses the same data type for both. That's a pain! In the code the VARCHAR2 values are wrapped in double quotes, while the NVARCHAR2 values are dumped as hex. The utility copes for this by checking the first character of the value for a double quote, and if found, pretends that it's really a type 96 (NCHAR) and extracts the value from the hex bytes. Joy!</p></li>
+<li><p>Data type 2 = NUMBER of some kind. These are easy to extract as the value is simply the numeric value passed to the SQL. Sometimes, see below, the value is in the trace file as '###' and a message indicates that an illegal number has been found. This is flagged up by the utility. <em>I think it might be possible that this isn't really an illegal number, but an OUT parameter for a PL/SQL call. I need to do a lot more testing to be certain.</em></p></li>
+<li><p>Data Type 11 = ROWID. These are extracted as is from the trace file.</p></li>
+<li><p>Data Type 23 = RAW. These are just a string of hex digits. Currently just extracted as just that, a string of digits.</p></li>
+<li><p>Data Type 25 = Listed in the trace file as unhandled data type. Not much I can do here! It gets output as &quot;Unhandled data type&quot;.</p></li>
+<li><p>Data Type 29 = Listed in the trace file as unhandled data type. Not much I can do here! It gets output as &quot;Unhandled data type&quot;.</p></li>
+<li><p>Data Type 96 = NCHAR. The value is dumped as hex values in the trace file, but the utility converts those back to a string. It cheats a little (a lot!) as the data are in pairs - &quot;0 31 0 32 0 33&quot; for a sting of digits &quot;123&quot;. All the utility does is ignore the leading 0 byte and converts the 31, 32 and 33 back into whatever ASCII character they are. So far, so good, but if your use of the utility breaks, send me the trace file and the details. Ta.</p></li>
+<li><p>Data Type 123 = A buffer. I've seen this type for the buffer to receive the line generated by DBMS_OUTPUT. The trace file has something like <code>BEGIN DBMS_OUTPUT.GET_LINES(:LINES, :NUM_LINES); END;</code>. The <code>NUM_LINES</code> bind is a plain old NUMBER - data type 2, while the buffer is a data type 123. This is simply converted into some text to indicate that it's a buffer, so the output looks like <code>BEGIN DBMS_OUTPUT.GET_LINES(:A_BUFFER, ## Illegal number ##); END;</code>.</p></li>
+</ul>
+<p><strong>Have Fun.</strong></p>
