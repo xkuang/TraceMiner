@@ -21,7 +21,12 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
 <h2 id="compiling">Compiling</h2>
 <p>Before compiling, check the section below on configuration. It might prove useful!</p>
 <p>Once you have decided on your configuration, it's a simple case of changing into the directory where the <code>Makefile</code> is to be found and running the <code>make</code> command. When complete there will be an executable file named <code>TraceMiner</code> in your current directory.</p>
-<p>There are two folders, <code>Debug</code> and <code>Release</code> with a suitable <code>Makefile</code> in each. The latter is what you should normally be running but in the event that you encounter errors, the former might be useful, if running in <code>--verbose</code> mode doesn't help!</p>
+<p>There are two folders, <code>Debug</code> and <code>Release</code> with a suitable makefile named <code>TraceMiner.mak</code> in each. The latter is what you should normally be running but in the event that you encounter errors, the former might be useful, if running in <code>--verbose</code> mode doesn't help!</p>
+<p>The following assumes that you downloaded the zip file from GitHub, and have unzipped it somewhere:</p>
+<pre><code>cd TraceMiner-master
+cd Release
+make -f TraceMiner.mak</code></pre>
+<p>If there is a file named <code>Makefile</code> then please ignore it unless you are using QT Creator as your IDE. That file has a lot of dependencies on the QT files for some reason.</p>
 <h2 id="configuration">Configuration</h2>
 <p>There are a few options that you can configure. All are present in the file <code>config.h</code> and this file should be edited to suit your system. The options are:</p>
 <ul>

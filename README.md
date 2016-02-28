@@ -26,7 +26,17 @@ Before compiling, check the section below on configuration. It might prove usefu
 
 Once you have decided on your configuration, it's a simple case of changing into the directory where the `Makefile` is to be found and running the `make` command. When complete there will be an executable file named `TraceMiner` in your current directory.
 
-There are two folders, `Debug` and `Release` with a suitable `Makefile` in each. The latter is what you should normally be running but in the event that you encounter errors, the former might be useful, if running in `--verbose` mode doesn't help!
+There are two folders, `Debug` and `Release` with a suitable makefile named `TraceMiner.mak` in each. The latter is what you should normally be running but in the event that you encounter errors, the former might be useful, if running in `--verbose` mode doesn't help!
+
+The following assumes that you downloaded the zip file from GitHub, and have unzipped it somewhere:
+
+```
+cd TraceMiner-master
+cd Release
+make -f TraceMiner.mak
+```
+
+If there is a file named `Makefile` then please ignore it unless you are using QT Creator as your IDE. That file has a lot of dependencies on the QT files for some reason.
 
 ## Configuration
 There are a few options that you can configure. All are present in the file `config.h` and this file should be edited to suit your system. The options are:
