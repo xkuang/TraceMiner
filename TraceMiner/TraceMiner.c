@@ -24,38 +24,7 @@ int processXCTEND();
 
 
 // Version number.
-const float version = 0.1;
-
-
-//----------------------------------------------//
-// This one's for Rich!
-//----------------------------------------------//
-// Because the test trace file supplied had been
-// obfuscated, the lengths of the SQL statements
-// being parsed were incorrect. Allocating a new
-// buffer meant problems. This is added to all
-// statement sizes as a work around.
-// In proper production trace files, this should
-// be zero.
-//----------------------------------------------//
-const int offsetForRich = 128;
-
-//===================================================================
-// WARNING:
-//===================================================================
-// This utility caters for up to 50 bind variables (MAXBINDS), each
-// pretending to be a string of up to 50 characters (MAXBINDSIZE).
-// If you need to change the number or max size of the bind values
-// stored and printed, then simply:
-//  * Adjust the value(s) in bindvalues.h.
-//  * If you made MAXBINDS bigger then add the additional entries to
-//    the function printExecDetails() in utils.c.
-//  * If you made MAXBINDS smaller then remove the no longer needed
-//    entries from the function printExecDetails() in utils.c.
-//  * If you changed MAXBINDSIZE then there are no additional changes
-//    to be done to cater, the utility copes quite happily.
-//  * Recompile.
-//===================================================================
+const float version = 0.11;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will
@@ -63,9 +32,15 @@ size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will
 char *myBuffer;                 // Pointer to my buffer.
 int debugging = 0;              // Set this for all sorts of stuff in stderr!
 int HTMLmode = 0;               // Set this to have output in HTML
+int helpMode = 0;               // Set this for help.
 long lineNumber = 0;            // Which line are we on? Needs to be global.
 cursorNode *headNode;           // Linked list head node. MUST BE A POINTER!
 int didItWork = 0;              // Any parse, exec, binds errors while processing?
+
+// What valid commandline options are allowed?
+char *validArgs[] = {"--verbose", "-v",
+                     "--html", "-m",
+                     "--help", "-h", "-?"};
 
 
 //======================================================================== MAIN
@@ -77,24 +52,56 @@ int main(int argc, char *argv[])
     int bytesRead;                  // Size of the line read from stdin.
     int startParsing = 0;           // Have we found the first "============" yet?
 
-    logOut("TraceMiner: Version %4.2f\n", version);
 
     // Check for command line parameters. Yes, I know, it's pretty basic stuff...
-    if (argc == 2) {
-        if ((strncasecmp(argv[1], "--verbose", 9) == 0)  ||
-            (strncasecmp(argv[1], "-v", 2) == 0)) {
-            debugging = 1;
-        } else {
-            usage("ERROR: Invalid parameter: detected.");
-            return 1;
-        }
-    } else {
-        if (argc != 1) {
-            usage("ERROR: Too many parameters supplied.");
-            return 1;
+    int invalidArg = 0;             // Assume all is well, so far anyway.
+
+    if (argc >= 2) {
+        int arg;
+        for (arg = 1; arg < argc; arg++) {
+            int foundArg = 0;               // Assume not found, each arg.
+
+            int valid;
+            for (valid = 0; valid < (int)(sizeof(validArgs)/sizeof(char *)); valid++) {
+                if (strcasecmp(argv[arg], validArgs[valid]) == 0) {
+                    foundArg = 1;
+                    break;
+                }
+            }
+
+            // If we have a valid option, set the appropriate flag.
+            if (foundArg == 1) {
+                if ((strcasecmp(argv[arg], "--verbose") == 0) ||
+                    (strcasecmp(argv[arg], "-v") == 0))
+                    debugging = 1;
+
+                if ((strcasecmp(argv[arg], "--html") == 0) ||
+                    (strcasecmp(argv[arg], "-m") == 0))
+                    HTMLmode = 1;
+
+                if ((strcasecmp(argv[arg], "--help") == 0) ||
+                    (strcasecmp(argv[arg], "-h") == 0)     ||
+                    (strcasecmp(argv[arg], "-?") == 0))
+                    helpMode = 1;
+            } else
+                invalidArg = 1;
         }
     }
 
+    // Anything invalid found in the options?
+    if (invalidArg != 0) {
+        usage("ERROR: Invalid parameter: detected.");
+        return 1;
+    }
+
+    // Help? Display it and exit.
+    if (helpMode != 0) {
+        usage("TraceMiner Help:");
+        return 0;
+    }
+
+
+    // Allocate a global buffer to read trace lines into.
     myBuffer = (char *) malloc (bufferSize + 1);
     if (myBuffer == NULL) {
         logErr("ERROR: malloc() failed to allocate buffer (%d bytes)\n", (int)bufferSize);
@@ -113,13 +120,29 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Seems to be ok, print the trace file name.
-    logOut("Processing: %s\n\n", myBuffer);
+    // Seems to be ok, print the headings and trace file name.
+    if (!HTMLmode) {
+        logOut("TraceMiner: Version %4.2f\n", version);
+        logOut("Processing: %s\n", myBuffer);
+        logOut("---------------------------------------------------------------------------------------------------------------------------------------\n");
+        logOut("%-11.11s%18.18s: %-55.55s\n", "Trace Line:", "Cursor ID", "SQL Text with binds replaced");
+        logOut("---------------------------------------------------------------------------------------------------------------------------------------\n");
+    } else {
+        logOut("<html>\n<head>\n<title>Trace Miner</title>\n");
 
-    // Headings next.
-    logOut("---------------------------------------------------------------------------------------------------------------------------------------\n");
-    logOut("%-11.11s%18.18s: %-55.55s\n", "Trace Line:", "Cursor ID", "SQL Text with binds replaced");
-    logOut("---------------------------------------------------------------------------------------------------------------------------------------\n");
+        logOut("<style>\n");
+        logOut("table { border-collapse: collapse; background: #ccccff; }\n");
+        logOut("table, th, td { border: 1px solid black; }\n");
+        logOut("th { background: blue; color: white; }\n");
+        logOut("</style>\n");
+
+        logOut("</head>\n<body>\n");
+        logOut("<h3>TraceMiner: Version %4.2f</h3>\n", version);
+        logOut("<p><strong>Processing:</strong> %s</p>\n", myBuffer);
+        logOut("\n<table>");
+        logOut("<tr><th>Trace Line</th><th>Cursor ID</th><th>SQL Text with binds replaced</th></tr>\n");
+    }
+
 
     // Set up the head node.
     headNode = (cursorNode *)malloc(sizeof(cursorNode));
@@ -189,6 +212,11 @@ int main(int argc, char *argv[])
         }
 
     } // while (1)
+
+    // Footings last.
+    if (HTMLmode) {
+        logOut("</table>\n</body></html>\n");
+    }
 
     // If we are debugging, dump the entire linked list.
     if (debugging) {
@@ -435,7 +463,14 @@ int processXCTEND()
 {
     debugErr("processXCTEND(): Entry for line %d.\n", lineNumber);
 
-    char *format = "%10ld:%18.18s: %s\n\n";     // Saves typing!
+    static char HTMLformat[] = {"<tr><td align=\"right\">%10ld</td><td>%18.18s</td><td>%s</td></tr>\n"};
+    static char TEXTformat[] = {"%10ld:%18.18s: %s\n\n"};
+    char *format;
+
+    if (!HTMLmode)
+        format = TEXTformat;
+    else
+        format = HTMLformat;
 
     char *cursorToken = getFirstToken(myBuffer);    // Ignore XCTEND.
     cursorToken = getNextToken();

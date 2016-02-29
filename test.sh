@@ -10,6 +10,8 @@ do
     echo "Testing with trace file: ${x}"
     DEBUG="${x%%trc}dbg"
     OUTPUT="${x%%trc}out"
-
+    HTML="${x%%trc}html"
+	
+    Release/TraceMiner <"${x}" >"${HTML}" 2>"${DEBUG}" --html
     Release/TraceMiner <"${x}" >"${OUTPUT}" 2>"${DEBUG}" --verbose
 done

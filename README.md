@@ -18,8 +18,9 @@ There is no license, just use it and abuse it as you see fit. Just leave my copy
 `TraceMiner [options] <trace_file.trc [ >report_file.txt ] [ 2>error_file.txt ]`
 
 ### Options
-  - --verbose | -v : Produces lots of output to the stderr channel. Best avoided!
-  - --help    | -h : Or any other incorrect option, displays brief help to the stdout channel.
+  - --verbose | -v   : Produces lots of output to the stderr channel. Best avoided!
+  - --html | -m      : Anything written to stdout will be in html format.
+  - --help | -h | -? : Or any other incorrect option, displays brief help to the stdout channel.
 
 ## Compiling
 Before compiling, check the section below on configuration. It might prove useful!
@@ -36,7 +37,7 @@ cd Release
 make -f TraceMiner.mak
 ```
 
-If there is a file named `Makefile` then please ignore it unless you are using QT Creator as your IDE. That file has a lot of dependencies on the QT files for some reason.
+If there is a file named `Makefile` then you may happily ignore it unless you are using QT Creator as your IDE. That file has a lot of dependencies on the QT files for some reason. I'm not sure why this should be, I used the IDE to create a non-QT application.
 
 ## Configuration
 There are a few options that you can configure. All are present in the file `config.h` and this file should be edited to suit your system. The options are:
@@ -46,6 +47,8 @@ There are a few options that you can configure. All are present in the file `con
   - MAXBINDS : Default 50. This defines the maximum number of bind variables that can occur in any one statement. If you see a message telling you to change it, you will be advised of the minimum value that it needs setting to, based on the SQL that broke the current settings though - it there's another SQL further down the trace file with more, then you will get the same error again.
 
   - MAXBINDSIZE : Default 50. This defines the maximum number of characters that will be output for each bind value when an SQL statement's EXEC line is detected in the trace file. Having this set too low might cause you to miss some important data while having it too high will waste space. Any bind value longer than this setting is simply truncated in the output - it will not stop the utility from running, unlike the two options above.
+
+  - OFFSETFORRICH : Default 128. Should be zero. When testing I used soome supplied trace files (Hi Rich) _obvioulsy_ obfuscated for security reasons. This meant that the "len=nnn" section on the `PARSING IN CURSOR` line was untrustworty as it reported the original size of the _unobfuscated_ SQL statement.  As the `nnn` value is used to allocate a buffer to hold the SQL, the results were sometimes nasty! By adding this offset to the original length, the complete SQL could be extracted and stored.
 
 ## Bind Variable Types
 

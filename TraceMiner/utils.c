@@ -1,19 +1,5 @@
 #include <ctype.h>
-
 #include "utils.h"
-
-//----------------------------------------------//
-// This one's for Rich!
-//----------------------------------------------//
-// Because the test trace file supplied had been
-// obfuscated, the lengths of the SQL statements
-// being parsed were incorrect. Allocating a new
-// buffer meant problems. This is added to all
-// statement sizes as a work around.
-// In proper production trace files, this should
-// be zero.
-//----------------------------------------------//
-extern int offsetForRich;
 
 // Required for getLine() etc.
 extern size_t bufferSize;
@@ -32,12 +18,14 @@ void usage(char *message)
 {
     puts(message);
     puts("USAGE:");
-    puts("\ttraceminer [--verbose] [-v] <trace_file [>output_file][2>debug_file]");
-    puts("\nWHERE:");
-    puts("\t'-v' or '--verbose' Turn on debugging mode. Debugging text is written to stderr.");
-    puts("\t'trace_file' is the input trace file from Oracle. It needs to have binds turned on. (stdin)");
-    puts("\t'output_file' is where the information you want will be written! (stdout)");
+    puts("\ttraceminer [options] <trace_file [>output_file][2>debug_file]");
+    puts("\n\t'trace_file' is the input trace file from Oracle. It needs to have binds turned on. (stdin)");
+    puts("\t'output_file' is where the information you want will be written. (stdout)");
     puts("\t'debug_file' is where errors and debugging information will be written. (stderr)\n");
+    puts("\nOPTIONS:");
+    puts("\t'-v' or '--verbose' Turn on debugging mode. Debugging text is written to stderr.");
+    puts("\t'-m' or '--html' Turn on HTML mode. Anything written to stdout will be in HTML format.");
+    puts("\t'-?'. '-h' or '--help' Displays this help, and exits.");
 }
 
 
@@ -97,11 +85,11 @@ int getLine()
     int bytesRead;
 
     bytesRead = getline (&myBuffer, &bufferSize, stdin);
-    if (bytesRead != -1)
+    if (bytesRead != -1) {
         lineNumber++;
-
-    if (bytesRead != -1)
         debugErr("getLine(): Line: %ld, size: %d bytes, content: %s", lineNumber, bytesRead, myBuffer);
+    } else
+        debugErr("getLine(): After Line: %ld, END OF FILE detected.\n", lineNumber);
 
     debugErr("getLine(): Exit\n");
     return bytesRead;
@@ -151,7 +139,7 @@ char *getSQLStatement(size_t statementLength)
 
     int bytesRead = 0;
     char *sqlBuffer;
-    size_t sqlLength = statementLength + offsetForRich;   // Because Rich has obfuscated the names!
+    size_t sqlLength = statementLength + OFFSETFORRICH;   // Because Rich has obfuscated the names!
 
     // Allocate a buffer for the whole SQL statement.
     // WARNING: It is the caller's job to free() this buffer
@@ -417,13 +405,19 @@ char *getOneBindValue()
 
     // Make sure we have the correct line in the file.
     // If the previous bind was type 25 or 29 then we are already at the
-    // correct buffer line and there's no need to read it again.
+    // correct buffer line and there's no need to read it again. We only
+    // need a single additional line from the trace file otherwise.
     if (strncmp(myBuffer, " Bind#", 6) != 0) {
         bytesRead = getLine();
-        debugErr("getOneBindValue(): First line read is %s.", myBuffer);
+        if (bytesRead == -1) {
+            debugErr("getOneBindValue(): END OF FILE detected early.");
+            return NULL;
+        }
     }
 
-    if (bytesRead == -1 || strncmp(myBuffer, " Bind#", 6) != 0) {
+    debugErr("getOneBindValue(): Line buffer is:\n %s.", myBuffer);
+
+    if (strncmp(myBuffer, " Bind#", 6) != 0) {
         logErr("getOneBindValue() did not read the \"Bind#n\" line when expected.\n");
         debugErr("getOneBindValue(): 'Bind#'' not found: Exit\n");
         return NULL;
@@ -512,9 +506,18 @@ void printExecDetails(cursorNode *node)
     debugErr("printExecDetails(): Printing node %p, cursorID '%s' parsed at line %ld.\n", node, node->cursorId, node->lineNumber);
 
     int sqlSize = strlen(node->sqlText);
-    char formatText[sqlSize+30];
-    strcpy(formatText, "%10ld:%18.18s: ");
-    strcat(&formatText[4], node->sqlText);
+    char formatText[sqlSize+50];
+    extern int HTMLmode;
+
+    if (HTMLmode == 0) {
+        strcpy(formatText, "%10ld:%18.18s: ");
+        strcat(formatText, node->sqlText);
+    } else {
+        strcpy(formatText, "<tr><td align=\"right\">%10ld</td><td>%18.18s</td><td>");
+        strcat(formatText, node->sqlText);
+        strcat(formatText, "</td></tr>");
+    }
+
     bindValues *v = &sqlBinds;
     logOut(formatText, node->lineNumber, node->cursorId,
            v->bv[0],  v->bv[1],  v->bv[2],  v->bv[3],  v->bv[4],
