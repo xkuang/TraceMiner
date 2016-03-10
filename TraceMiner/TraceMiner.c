@@ -24,7 +24,7 @@ int processXCTEND();
 
 
 // Version number.
-const float version = 0.11;
+const float version = 0.12;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
         logOut("TraceMiner: Version %4.2f\n", version);
         logOut("Processing: %s\n", myBuffer);
         logOut("---------------------------------------------------------------------------------------------------------------------------------------\n");
-        logOut("%-11.11s%18.18s: %-55.55s\n", "Trace Line:", "Cursor ID", "SQL Text with binds replaced");
+        logOut("%-10.10s: %18.18s %-12.12s %-55.55s\n", "EXEC Line :", "Cursor ID :", "PARSE Line :", "SQL Text with binds replaced");
         logOut("---------------------------------------------------------------------------------------------------------------------------------------\n");
     } else {
         logOut("<html>\n<head>\n<title>Trace Miner</title>\n");
@@ -136,11 +136,11 @@ int main(int argc, char *argv[])
         logOut("th { background: blue; color: white; }\n");
         logOut("</style>\n");
 
-        logOut("</head>\n<body>\n");
+        logOut("</head>\n<body width=\"96%\">\n");
         logOut("<h3>TraceMiner: Version %4.2f</h3>\n", version);
         logOut("<p><strong>Processing:</strong> %s</p>\n", myBuffer);
         logOut("\n<table>");
-        logOut("<tr><th>Trace Line</th><th>Cursor ID</th><th>SQL Text with binds replaced</th></tr>\n");
+        logOut("<tr><th>EXEC&nbsp;Line</th><th>Cursor ID</th><th>PARSE&nbsp;Line</th><th align=\"left\">SQL Text with binds replaced</th></tr>\n");
     }
 
 
@@ -463,8 +463,8 @@ int processXCTEND()
 {
     debugErr("processXCTEND(): Entry for line %d.\n", lineNumber);
 
-    static char HTMLformat[] = {"<tr><td align=\"right\">%10ld</td><td>%18.18s</td><td>%s</td></tr>\n"};
-    static char TEXTformat[] = {"%10ld:%18.18s: %s\n\n"};
+    static char HTMLformat[] = {"<tr><td align=\"right\">%ld</td><td>&nbsp;</td><td>&nbsp;</td><td>%s</td></tr>\n"};
+        static char TEXTformat[] = {"%9ld :                  :            : %s\n\n"};
     char *format;
 
     if (!HTMLmode)
@@ -476,10 +476,10 @@ int processXCTEND()
     cursorToken = getNextToken();
     if (strncmp(cursorToken, "rlbk=0", 6) == 0) {
         debugErr("EXECuting COMMIT.\n", cursorToken);
-        logOut(format, lineNumber, " ", "COMMIT");
+        logOut(format, lineNumber, "COMMIT");
     } else {
         debugErr("EXECuting ROLLBACK.\n", cursorToken);
-        logOut(format, lineNumber, " ", "ROLLBACK");
+        logOut(format, lineNumber, "ROLLBACK");
     }
     debugErr("processXCTEND(): Exit.\n");
     return 0;

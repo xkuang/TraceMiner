@@ -84,9 +84,36 @@ int getLine()
 
     int bytesRead;
 
-    bytesRead = getline (&myBuffer, &bufferSize, stdin);
-    if (bytesRead != -1) {
+    // We have to watch out for those "interesting" lines in the trace
+    // file where Oracle inserts a blank line and a timestamp line.
+
+    while (1) {
+        bytesRead = getline (&myBuffer, &bufferSize, stdin);
+
+        // EOF?
+        if (bytesRead == -1)
+            break;
+
+        // We must count this line then, if not EOF.
         lineNumber++;
+
+        // Ignore '*** ??? Timestamp' lines.
+        if (strncmp(myBuffer, "***", 3) == 0) {
+            // I'm not interested in all of the line, only the first 20 odd charactares.
+            debugErr("getLine(): At Line: %ld, TIMESTAMP entry '%23.23s ...' ignored.\n", lineNumber, myBuffer);
+            continue;
+        }
+
+        // This MUST be the final check.
+        // If this is a Blank line? (Just LF or CRLF) read again, otherwise we are done.
+        if (bytesRead > 2)
+            break;
+        else
+            debugErr("getLine(): At Line: %ld, blank line ignored.\n", lineNumber);
+    }
+
+    // Further checking required here.
+    if (bytesRead != -1) {
         debugErr("getLine(): Line: %ld, size: %d bytes, content: %s", lineNumber, bytesRead, myBuffer);
     } else
         debugErr("getLine(): After Line: %ld, END OF FILE detected.\n", lineNumber);
@@ -139,7 +166,12 @@ char *getSQLStatement(size_t statementLength)
 
     int bytesRead = 0;
     char *sqlBuffer;
-    size_t sqlLength = statementLength + OFFSETFORRICH;   // Because Rich has obfuscated the names!
+
+    // Allocate a buffer to hold the parsed SQL statement as per the length reported
+    // in the trace file, plus an extra allowance for those trace files, such as
+    // Rich's, where the tables etc have been obfuscated and the length no longer
+    // matches that in the PARSING IN CURSOR line. :-)
+    size_t sqlLength = statementLength + OFFSETFORRICH;
 
     // Allocate a buffer for the whole SQL statement.
     // WARNING: It is the caller's job to free() this buffer
@@ -189,6 +221,8 @@ int convertSQLBinds(char *sqlStatement)
     // After the first one, we have to adjust the rest of the buffer to
     // strip out the meaningful names and replace them with "%s" instead
     // of ":variable_name".
+    // Also, to allow the HTML output table to adjust to the browser width,
+    // a space will be inserted into the output SQL statement.
     while (*from) {
         if (*from == ':') {
             // First bind variable has been found.
@@ -214,7 +248,7 @@ int convertSQLBinds(char *sqlStatement)
         // Or even, Linux files that have been converted to Windows!
         if (*from == '\r') from++;     // Skip carriage returns.
 
-        // Looking for the first colon...
+        // Looking for the [next] colon...
         if (*from != ':') {
             // Copy 'from' character to 'to' character in the buffer.
             *to++ = *from++;
@@ -223,7 +257,7 @@ int convertSQLBinds(char *sqlStatement)
             bindCount++;
 
             // Skip past the bind in the input buffer.
-            // Are there any other character that could go here I wonder?
+            // Are there any other characters that could go here I wonder?
             while (*from &&
                    *from != ' ' &&
                    *from != ')' &&
@@ -237,7 +271,8 @@ int convertSQLBinds(char *sqlStatement)
     }
 
     // Terminate the new SQL statement. It's going to be shorter
-    // if the SQL wasn't using single character bind variables.
+    // if the SQL wasn't using single character bind variables or
+    // longer if it was.
     *to = '\0';
 
     debugErr("convertSQLBinds(): Exit\n");
@@ -415,7 +450,7 @@ char *getOneBindValue()
         }
     }
 
-    debugErr("getOneBindValue(): Line buffer is:\n %s.", myBuffer);
+    debugErr("getOneBindValue(): Line buffer is:\n%s.", myBuffer);
 
     if (strncmp(myBuffer, " Bind#", 6) != 0) {
         logErr("getOneBindValue() did not read the \"Bind#n\" line when expected.\n");
@@ -505,21 +540,26 @@ void printExecDetails(cursorNode *node)
     debugErr("printExecDetails(): Entry for node %p.\n", node);
     debugErr("printExecDetails(): Printing node %p, cursorID '%s' parsed at line %ld.\n", node, node->cursorId, node->lineNumber);
 
+    // We need to build a format string for logOut, but we need some extra characters
+    // at the front for line numbers etc. FormatAddition defines how many extras.
     int sqlSize = strlen(node->sqlText);
-    char formatText[sqlSize+50];
+    const int formatAddition = 100;
+    char formatText[sqlSize + formatAddition +1];
     extern int HTMLmode;
 
     if (HTMLmode == 0) {
-        strcpy(formatText, "%10ld:%18.18s: ");
+        strcpy(formatText, "%9ld :%18.18s: %10ld : ");
         strcat(formatText, node->sqlText);
     } else {
-        strcpy(formatText, "<tr><td align=\"right\">%10ld</td><td>%18.18s</td><td>");
+        // Don't make the following bigger than "formatAddition", or else!
+        strncpy(formatText, "<tr><td align=\"right\">%ld</td><td>%s</td><td align=\"right\">%ld</td><td>", formatAddition);
+        formatText[formatAddition] = '\0';      // Strncat doesn't add the trailing '\0'
         strcat(formatText, node->sqlText);
         strcat(formatText, "</td></tr>");
     }
 
     bindValues *v = &sqlBinds;
-    logOut(formatText, node->lineNumber, node->cursorId,
+    logOut(formatText, lineNumber, node->cursorId, node->lineNumber,
            v->bv[0],  v->bv[1],  v->bv[2],  v->bv[3],  v->bv[4],
            v->bv[5],  v->bv[6],  v->bv[7],  v->bv[8],  v->bv[9],
            v->bv[10], v->bv[11], v->bv[12], v->bv[13], v->bv[14],
