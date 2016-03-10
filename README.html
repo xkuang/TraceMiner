@@ -24,9 +24,16 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
 <p>Once you have decided on your configuration, it's a simple case of changing into the directory where the <code>Makefile</code> is to be found and running the <code>make</code> command. When complete there will be an executable file named <code>TraceMiner</code> in your current directory.</p>
 <p>There are two folders, <code>Debug</code> and <code>Release</code> with a suitable makefile named <code>TraceMiner.mak</code> in each. The latter is what you should normally be running but in the event that you encounter errors, the former might be useful, if running in <code>--verbose</code> mode doesn't help!</p>
 <p>The following assumes that you downloaded the zip file from GitHub, and have unzipped it somewhere:</p>
-<pre><code>cd TraceMiner-master
-cd Release
+<h3 id="compiling-gnu-style">Compiling GNU Style</h3>
+<p>If you have GNU utilities and/or your setup is GNU aware, the following should just work:</p>
+<pre><code>cd TraceMiner-master/Release
 make -f TraceMiner.mak</code></pre>
+<h3 id="when-the-makefile-doesnt-work---aix">When the Makefile Doesn't Work - AIX?</h3>
+<p>The following assumes you live in <em>AIX World</em> when it complains about GNU stuff. It can also be used if you are stuck in a world that is not GNU aware or if the <code>TraceMiner.mak</code> doesn't work with your specific <code>make</code> setup:</p>
+<pre><code>cd TraceMiner-master/Release
+/usr/vac/bin/xlc -I../TraceMiner ../TraceMiner/TraceMiner.c ../TraceMiner/utils.c ../TraceMiner/linkedList.c
+mv a.out TraceMiner</code></pre>
+<p>It appears that this particular AIX C compiler (<code>xlc</code>) will not create the output file with the name you want it to. Or so I have been reliably informed by a DBA suffering from AIX (<em>Hi Rich!</em>). You may need to change the path to the <code>xlc</code> compiler to suit your system.</p>
 <p>If there is a file named <code>Makefile</code> then you may happily ignore it unless you are using QT Creator as your IDE. That file has a lot of dependencies on the QT files for some reason. I'm not sure why this should be, I used the IDE to create a non-QT application.</p>
 <h2 id="configuration">Configuration</h2>
 <p>There are a few options that you can configure. All are present in the file <code>config.h</code> and this file should be edited to suit your system. The options are:</p>
@@ -34,7 +41,7 @@ make -f TraceMiner.mak</code></pre>
 <li><p>MAXCURSORSIZE : Default 20. This defines the length of the text making up a cursor id in a trace file. These used to be numeric, starting from 1 and incrementing, but from 9i, I think, Oracle changed to using a much larger cursor id. On Linux, at least at Oracle version 11.2.0.2, cursor ids are '#140136345356328' and this is 16 characters. On AIX with Oracle 11.2.0.3, a cursor id is '#4574461088' which is only 11 characters. Other systems may differ, so this option defaults to 20 and should be good enough. Change it if you get a message telling you that it needs changing. The message will hint at a suitable value, to save you counting digits!</p></li>
 <li><p>MAXBINDS : Default 50. This defines the maximum number of bind variables that can occur in any one statement. If you see a message telling you to change it, you will be advised of the minimum value that it needs setting to, based on the SQL that broke the current settings though - it there's another SQL further down the trace file with more, then you will get the same error again.</p></li>
 <li><p>MAXBINDSIZE : Default 50. This defines the maximum number of characters that will be output for each bind value when an SQL statement's EXEC line is detected in the trace file. Having this set too low might cause you to miss some important data while having it too high will waste space. Any bind value longer than this setting is simply truncated in the output - it will not stop the utility from running, unlike the two options above.</p></li>
-<li><p>OFFSETFORRICH : Default 128. Should be zero. When testing I used soome supplied trace files (Hi Rich) <em>obvioulsy</em> obfuscated for security reasons. This meant that the &quot;len=nnn&quot; section on the <code>PARSING IN CURSOR</code> line was untrustworty as it reported the original size of the <em>unobfuscated</em> SQL statement. As the <code>nnn</code> value is used to allocate a buffer to hold the SQL, the results were sometimes nasty! By adding this offset to the original length, the complete SQL could be extracted and stored.</p></li>
+<li><p>OFFSETFORRICH : Default 128. Should be zero. When testing I used some supplied trace files (Hi Rich) <em>obviously</em> obfuscated for security reasons. This meant that the &quot;len=nnn&quot; section on the <code>PARSING IN CURSOR</code> line was untrustworthy as it reported the original size of the <em>unobfuscated</em> SQL statement. As the <code>nnn</code> value is used to allocate a buffer to hold the SQL, the results were sometimes nasty! By adding this offset to the original length, the complete SQL could be extracted and stored.</p></li>
 </ul>
 <h2 id="bind-variable-types">Bind Variable Types</h2>
 <ul>
@@ -44,7 +51,8 @@ make -f TraceMiner.mak</code></pre>
 <li><p>Data Type 23 = RAW. These are just a string of hex digits. Currently just extracted as just that, a string of digits.</p></li>
 <li><p>Data Type 25 = Listed in the trace file as unhandled data type. Not much I can do here! It gets output as &quot;Unhandled data type&quot;.</p></li>
 <li><p>Data Type 29 = Listed in the trace file as unhandled data type. Not much I can do here! It gets output as &quot;Unhandled data type&quot;.</p></li>
-<li><p>Data Type 96 = NCHAR. The value is dumped as hex values in the trace file, but the utility converts those back to a string. It cheats a little (a lot!) as the data are in pairs - &quot;0 31 0 32 0 33&quot; for a sting of digits &quot;123&quot;. All the utility does is ignore the leading 0 byte and converts the 31, 32 and 33 back into whatever ASCII character they are. So far, so good, but if your use of the utility breaks, send me the trace file and the details. Ta.</p></li>
+<li><p>Data Type 96 = NCHAR. The value is dumped as hex values in the trace file, but the utility converts those back to a string. It cheats a little (a lot!) as the data are in pairs - &quot;0 31 0 32 0 33&quot; for a string of digits &quot;123&quot;. All the utility does is ignore the leading 0 byte and converts the 31, 32 and 33 back into whatever ASCII character they are. So far, so good, but if your use of the utility breaks something, send me the trace file and the details. Ta.</p></li>
 <li><p>Data Type 123 = A buffer. I've seen this type for the buffer to receive the line generated by DBMS_OUTPUT. The trace file has something like <code>BEGIN DBMS_OUTPUT.GET_LINES(:LINES, :NUM_LINES); END;</code>. The <code>NUM_LINES</code> bind is a plain old NUMBER - data type 2, while the buffer is a data type 123. This is simply converted into some text to indicate that it's a buffer, so the output looks like <code>BEGIN DBMS_OUTPUT.GET_LINES(:A_BUFFER, ## Illegal number ##); END;</code>.</p></li>
 </ul>
+<p>There are other bind variable data types, but so far, everything I've thrown at the utility has come out the other end quite happily. Famous last words?</p>
 <p><strong>Have Fun.</strong></p>
