@@ -425,7 +425,7 @@ int processEXEC()
     debugErr("processEXEC(): EXECuting SQL statement %s.\n", cursorToken);
 
     cursorToken = getNextToken();                   // Get the cursor #
-    for (x=0; x < 8; x++) {
+    for (x = 0; x < 8; x++) {
         depthToken = getNextToken();                // Get the depth
     }
 

@@ -475,7 +475,7 @@ char *getOneBindValue()
     bytesRead = getLine();      // Ignored.
     bytesRead = getLine();      // We find NULLs here in token 3. 'avl=00'
     valueToken = getFirstToken(myBuffer);
-    for (x=0; x < 2; x++)
+    for (x = 0; x < 2; x++)
         valueToken = getNextToken();
 
     // Check for a NULL value or a RETURNING INTO bind.
