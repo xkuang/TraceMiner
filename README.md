@@ -7,7 +7,7 @@ The utility reads from stdin, writes its report to stdout, and any other bumff g
 Email: <norman@dunbar-it.co.uk>.
 
 ## Copyright
-Copyright (c) Norman Dunbar, 2016. 
+Copyright (c) Norman Dunbar, 2016.
 
 ## License
 
@@ -25,14 +25,26 @@ There is no license, just use it and abuse it as you see fit. Just leave my copy
 ## Compiling
 Before compiling, check the section below on configuration. It might prove useful!
 
-Once you have decided on your configuration, it's a simple case of changing into the directory where the `Makefile` is to be found and running the `make` command. When complete there will be an executable file named `TraceMiner` in your current directory.
+Once you have decided on your configuration, it's a simple case of changing into the directory where the various makefiles (`Makefile` and/or `TraceMiner.mak`) are to be found and running the `make` command. When complete there will be an executable file named `TraceMiner` in your current directory.
 
-There are two folders, `Debug` and `Release` with a suitable makefile named `TraceMiner.mak` in each. The latter is what you should normally be running but in the event that you encounter errors, the former might be useful, if running in `--verbose` mode doesn't help!
+There are two folders, `Debug` and `Release` with a suitable makefiles named `Makefile` and/or `TraceMiner.mak` in each. The `Release` version is what you should normally be compiling and running but in the event that you encounter errors, the former might be useful if you have a debugger and running in `--verbose` mode didn't/doesn't help!
 
-The following assumes that you downloaded the zip file from GitHub, and have unzipped it somewhere:
+The following compilation instructions assume that you downloaded the zip file from GitHub, and have unzipped it somewhere:
 
-### Compiling GNU Style
-If you have GNU utilities and/or your setup is GNU aware, the following should just work:
+
+### Compiling with the Qt Creator IDE
+If you use Qt Creator, simply open the project file `TraceMiner-master\TraceMiner\TraceMiner.pro` and compile in the usual manner after selecting the `Debug` or `Release` build option as desired.
+
+
+### Compiling with Qt on the Command Line
+You can, if you have Qt installed, use the default `Makefile` to compile the utility from the command line.
+```
+cd TraceMiner-master/Release
+make
+```
+
+### Compiling Without Qt
+If you have GNU utilities and/or your setup is GNU aware and/or you do not have Qt installed, the following should just work:
 ```
 cd TraceMiner-master/Release
 make -f TraceMiner.mak
@@ -51,7 +63,7 @@ It appears that this particular AIX C compiler (`xlc`) will not create the outpu
 If there is a file named `Makefile` then you may happily ignore it unless you are using QT Creator as your IDE. That file has a lot of dependencies on the QT files for some reason. I'm not sure why this should be, I used the IDE to create a non-QT application.
 
 ## Configuration
-There are a few options that you can configure. All are present in the file `config.h` and this file should be edited to suit your system. The options are:
+There are a few options that you can configure _before_ compiling. All are present in the file `config.h` and this file should be edited to suit your system. The options are:
 
   - MAXCURSORSIZE : Default 20. This defines the length of the text making up a cursor id in a trace file. These used to be numeric, starting from 1 and incrementing, but from 9i, I think, Oracle changed to using a much larger cursor id. On Linux, at least at Oracle version 11.2.0.2, cursor ids are '#140136345356328' and this is 16 characters. On AIX with Oracle 11.2.0.3, a cursor id is '#4574461088' which is only 11 characters. Other systems may differ, so this option defaults to 20 and should be good enough. Change it if you get a message telling you that it needs changing. The message will hint at a suitable value, to save you counting digits!
 
@@ -63,7 +75,7 @@ There are a few options that you can configure. All are present in the file `con
 
 ## Bind Variable Types
 
-  - Data type 1 = VARCHAR2 or NVARCHAR2. Oracle uses the same data type for both. That's a pain! In the code the VARCHAR2 values are wrapped in double quotes, while the NVARCHAR2 values are dumped as hex. The utility copes for this by checking the first character of the value for a double quote, and if found, pretends that it's really a type 96 (NCHAR) and extracts the value from the hex bytes. Joy!
+  - Data type 1 = VARCHAR2 or NVARCHAR2. Oracle uses the same data type for both. That's a pain! In the code the VARCHAR2 values are wrapped in double quotes, while the NVARCHAR2 values are dumped as hex. The utility copes for this by checking the first character of the value for a double quote, and if _not_ found, pretends that it's really a type 96 (NCHAR) and extracts the value from the hex bytes. Joy!
 
   - Data type 2 = NUMBER of some kind. These are easy to extract as the value is simply the numeric value passed to the SQL. Sometimes, see below, the value is in the trace file as '###' and a message indicates that an illegal number has been found. This is flagged up by the utility. _I think it might be possible that this isn't really an illegal number, but an OUT parameter for a PL/SQL call. I need to do a lot more testing to be certain._
 
@@ -77,7 +89,7 @@ There are a few options that you can configure. All are present in the file `con
 
   - Data Type 96 = NCHAR. The value is dumped as hex values in the trace file, but the utility converts those back to a string. It cheats a little (a lot!) as the data are in pairs - "0 31 0 32 0 33" for a string of digits "123". All the utility does is ignore the leading 0 byte and converts the 31, 32 and 33 back into whatever ASCII character they are. So far, so good, but if your use of the utility breaks something, send me the trace file and the details. Ta.
 
-  - Data Type 123 = A buffer. I've seen this type for the buffer to receive the line generated by DBMS_OUTPUT. The trace file has something like `BEGIN DBMS_OUTPUT.GET_LINES(:LINES, :NUM_LINES); END;`. The `NUM_LINES` bind is a plain old NUMBER - data type 2, while the buffer is a data type 123. This is simply converted into some text to indicate that it's a buffer, so the output looks like `BEGIN DBMS_OUTPUT.GET_LINES(:A_BUFFER, ## Illegal number ##); END;`.
+  - Data Type 123 = A buffer. I've seen this type for the buffer to receive the line generated by DBMS_OUTPUT. The trace file has something like `BEGIN DBMS_OUTPUT.GET_LINES(:LINES, :NUM_LINES); END;`. The `NUM_LINES` bind is a plain old NUMBER - data type 2, while the buffer is a data type 123. This is simply converted into some text to indicate that it's a buffer, so the output looks like `BEGIN DBMS_OUTPUT.GET_LINES(:A_BUFFER, ## Illegal number ##); END;`. (See Data Type 2 above for a possible reason why the second parameter is flagged as an illegal number.)
 
   There are other bind variable data types, but so far, everything I've thrown at the utility has come out the other end quite happily. Famous last words?
 
