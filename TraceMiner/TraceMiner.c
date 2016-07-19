@@ -24,7 +24,7 @@ int processXCTEND();
 
 
 // Version number.
-const float version = 0.12;
+const float version = 0.13;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will

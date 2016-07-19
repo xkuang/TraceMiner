@@ -151,7 +151,7 @@ char *getNextToken()
     char *token;
 
     token = strtok(NULL, stopChars);
-    debugErr("getFirstToken(): Returning %d characters, '%s'.\n", strlen(token), token);
+    debugErr("getNextToken(): Returning %d characters, '%s'.\n", strlen(token), token);
     debugErr("getNextToken(): Exit\n");
     return token;
 }
@@ -558,6 +558,9 @@ void printExecDetails(cursorNode *node)
         strcat(formatText, "</td></tr>");
     }
 
+    // If config.h has MAXBINDS set to 'n', then there must be v->bv[0] through
+    // v->bv[n-1] in the following. No more, no less.
+    // By default this is 50, so we have bv[0] through bv[49] below.
     bindValues *v = &sqlBinds;
     logOut(formatText, lineNumber, node->cursorId, node->lineNumber,
            v->bv[0],  v->bv[1],  v->bv[2],  v->bv[3],  v->bv[4],

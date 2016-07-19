@@ -49,6 +49,7 @@ If you have GNU utilities and/or your setup is GNU aware and/or you do not have 
 cd TraceMiner-master/Release
 make -f TraceMiner.mak
 ```
+Use TraceMiner32.mak if you are on a 32 bit system.
 
 ### When the Makefile Doesn't Work - AIX?
 The following assumes you live in _AIX World_ when it complains about GNU stuff. It can also be used if you are stuck in a world that is not GNU aware or if the `TraceMiner.mak` doesn't work with your specific `make` setup:
