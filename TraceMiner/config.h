@@ -5,6 +5,11 @@
 // is 50 binds in any one statement. If the program detects any SQL
 // with more than 50, it will abort with a helpful message telling
 // you what to do.
+//
+// PLEASE NOTE: If you change this value, up or down, then you must
+// change function printExecDetails() in utils.c to match. You need
+// to have v->bv[0] through v->bv[MAXBINDS-1] ONLY, in that function 
+// in the call to logOut().
 #define MAXBINDS 50
 
 // The default size for the maximum number of characters in any one bind
