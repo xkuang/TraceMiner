@@ -4,7 +4,7 @@
 <p>Email: <script type="text/javascript">
 <!--
 h='&#100;&#x75;&#110;&#98;&#x61;&#114;&#x2d;&#x69;&#116;&#46;&#x63;&#x6f;&#46;&#x75;&#x6b;';a='&#64;';n='&#110;&#x6f;&#114;&#x6d;&#x61;&#110;';e=n+a+h;
-document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
 // -->
 </script><noscript>&#110;&#x6f;&#114;&#x6d;&#x61;&#110;&#32;&#x61;&#116;&#32;&#100;&#x75;&#110;&#98;&#x61;&#114;&#x2d;&#x69;&#116;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#32;&#100;&#x6f;&#116;&#32;&#x75;&#x6b;</noscript>.</p>
 <h2 id="copyright">Copyright</h2>
@@ -15,25 +15,33 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
 <p><code>TraceMiner [options] &lt;trace_file.trc [ &gt;report_file.txt ] [ 2&gt;error_file.txt ]</code></p>
 <h3 id="options">Options</h3>
 <ul>
-<li>--verbose | -v : Produces lots of output to the stderr channel. Best avoided!</li>
-<li>--html | -m : Anything written to stdout will be in html format.</li>
-<li>--help | -h | -? : Or any other incorrect option, displays brief help to the stdout channel.</li>
+<li><code>--verbose</code> | <code>-v</code> : Produces lots of output to the stderr channel. Best avoided!</li>
+<li><code>--html</code> | <code>-m</code> : Anything written to stdout will be in html format.</li>
+<li><code>--help</code> | <code>-h</code> | <code>-?</code> : Or any other incorrect option, displays brief help to the stdout channel.</li>
 </ul>
 <h2 id="compiling">Compiling</h2>
 <p>Before compiling, check the section below on configuration. It might prove useful!</p>
 <p>Once you have decided on your configuration, it's a simple case of changing into the directory where the various makefiles (<code>Makefile</code> and/or <code>TraceMiner.mak</code>) are to be found and running the <code>make</code> command. When complete there will be an executable file named <code>TraceMiner</code> in your current directory.</p>
 <p>There are two folders, <code>Debug</code> and <code>Release</code> with a suitable makefiles named <code>Makefile</code> and/or <code>TraceMiner.mak</code> in each. The <code>Release</code> version is what you should normally be compiling and running but in the event that you encounter errors, the former might be useful if you have a debugger and running in <code>--verbose</code> mode didn't/doesn't help!</p>
 <p>The following compilation instructions assume that you downloaded the zip file from GitHub, and have unzipped it somewhere:</p>
-<h3 id="compiling-with-the-qt-creator-ide">Compiling with the Qt Creator IDE</h3>
+<h3 id="compiling-with-visual-studio-on-windows">Compiling with Visual Studio on Windows</h3>
+<p>I tried, honest I did! It seems that from version 2005 of Visual Studio, or <em>probably</em> before, the compiler hasn't been updated. It really doesn't like declarations of variables anywhere after lines of code, so all variables have to be declared <em>at the top</em> of the function(s). Quite honestly, I can't be bothered, but I may persevere if I'm ever bored.</p>
+<p>Additionally, the GNU function <code>get_line()</code> is not available on Windows anyway, although there are versions out there in the wild that carry out the same/similar functionality that could be used. I have tried this out and I have a version that sort of runs ok, but it randomly aborts at different places in the code for no reason. Running it via the debugger doesn't help as it runs fine in debug mode. Sigh.</p>
+<p>I gave up in the end and installed Linux Mint 18 (Sarah) into a VirtualBox VM on my desktop, and used that to compile and run the code on. All I had to do was get my trace files onto the VM - easy using shared folders. Much easier.</p>
+<h3 id="compiling-with-mingw-on-windows">Compiling with Mingw on Windows</h3>
+<p>This too has problems, which is surprising as it's supposedly GNU compatible. It cannot find the <code>get_line()</code> function even though <code>_GNU_SOURCE</code> has been defined, which is supposed to make it work. It doesn't so far. More work required to find out why I'm afraid.</p>
+<p>I'm actually beginning to think that a Java version on Windows might be the best option.</p>
+<h3 id="compiling-with-the-qt-creator-ide-on-linux">Compiling with the Qt Creator IDE on Linux</h3>
 <p>If you use Qt Creator, simply open the project file <code>TraceMiner-master\TraceMiner\TraceMiner.pro</code> and compile in the usual manner after selecting the <code>Debug</code> or <code>Release</code> build option as desired.</p>
-<h3 id="compiling-with-qt-on-the-command-line">Compiling with Qt on the Command Line</h3>
-<p>You can, if you have Qt installed, use the default <code>Makefile</code> to compile the utility from the command line.</p>
+<h3 id="compiling-with-qt-on-the-command-line-on-linux">Compiling with Qt on the Command Line on Linux</h3>
+<p>You can, if you have Qt installed, use the default <code>Makefile</code> to compile the utility from the command line, although you may need to change some paths etc to point at your specific installation of Qt.</p>
 <pre><code>cd TraceMiner-master/Release
 make</code></pre>
 <h3 id="compiling-without-qt">Compiling Without Qt</h3>
 <p>If you have GNU utilities and/or your setup is GNU aware and/or you do not have Qt installed, the following should just work:</p>
 <pre><code>cd TraceMiner-master/Release
-make -f TraceMiner.mak</code></pre><p>Use TraceMiner32.mak if you are on a 32 bit system.</p>
+make -f TraceMiner.mak</code></pre>
+<p>Use TraceMiner32.mak if you are on a 32 bit system.</p>
 <h3 id="when-the-makefile-doesnt-work---aix">When the Makefile Doesn't Work - AIX?</h3>
 <p>The following assumes you live in <em>AIX World</em> when it complains about GNU stuff. It can also be used if you are stuck in a world that is not GNU aware or if the <code>TraceMiner.mak</code> doesn't work with your specific <code>make</code> setup:</p>
 <pre><code>cd TraceMiner-master/Release

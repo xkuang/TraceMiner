@@ -21,10 +21,11 @@ int processPARSING();
 int processBINDS();
 int processEXEC();
 int processXCTEND();
+int processPARSEERROR();
 
 
 // Version number.
-const float version = 0.13;
+const float version = 0.14;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will
@@ -206,6 +207,13 @@ int main(int argc, char *argv[])
 
         if (strncmp(myBuffer, "XCTEND", 6) == 0) {
             didItWork = processXCTEND();
+            if (didItWork < 0)
+                return 1;
+            continue;
+        }
+
+        if (strncmp(myBuffer, "PARSE ERROR", 11) == 0) {
+            didItWork = processPARSEERROR();
             if (didItWork < 0)
                 return 1;
             //continue;    // No further tests to skip.
@@ -464,7 +472,7 @@ int processXCTEND()
     debugErr("processXCTEND(): Entry for line %d.\n", lineNumber);
 
     static char HTMLformat[] = {"<tr><td align=\"right\">%ld</td><td>&nbsp;</td><td>&nbsp;</td><td>%s</td></tr>\n"};
-        static char TEXTformat[] = {"%9ld :                  :            : %s\n\n"};
+    static char TEXTformat[] = {"%9ld :                  :            : %s\n\n"};
     char *format;
 
     if (!HTMLmode)
@@ -482,5 +490,76 @@ int processXCTEND()
         logOut(format, lineNumber, "ROLLBACK");
     }
     debugErr("processXCTEND(): Exit.\n");
+    return 0;
+}
+
+
+//============================================================== PROCESSPARSEERROR
+// Is this line a PARSE ERROR line?
+//============================================================== PROCESSPARSEERROR
+int processPARSEERROR()
+{
+    debugErr("processPARSEERROR(): Entry for line %d.\n", lineNumber);
+
+    static char HTMLformat[] = {"<tr><td>&nbsp;</td><td>&nbsp;</td><td align=\"right\">%ld</td><td>PARSE ERROR ORA-%s<br>"};
+    static char TEXTformat[] = {"\n          :                  : %10ld : PARSE ERROR ORA-%s"};
+    static char SQLformat[] = {"%9ld :                  :            : %s\n"};
+    char *format;
+
+    if (!HTMLmode)
+        format = TEXTformat;
+    else
+        format = HTMLformat;
+
+	int x;
+
+	char *cursorToken = getFirstToken(myBuffer);      // Ignore 'PARSE'.
+    for (x = 0; x < 9; x++) {
+        cursorToken = getNextToken();           // Get the 'err=nnnn' stuff.
+    }
+
+    debugErr("processPARSEERROR(): PARSE ERROR ORA-%s.\n", cursorToken + 4);
+    logOut(format, lineNumber, cursorToken + 4);
+
+    // Print out the lines of SQL that failed to parse.
+    // These are not terminated by END OF STMT though!
+
+    while (1) {
+        int bytesRead = getLine();
+        if (bytesRead == -1) {
+            break;
+        }
+
+        lineNumber++;
+
+        if (strncmp(myBuffer, "=======", 7) == 0) {
+            break;
+        } 
+
+        if (strncmp(myBuffer, "WAIT", 4) == 0) {
+            break;
+        } 
+
+        if (strncmp(myBuffer, "CLOSE", 5) == 0) {
+            break;
+        } 
+
+        // Print the (next) line of SQL.
+        debugErr("processPARSEERROR(): SQL = %s", myBuffer);
+
+        if (!HTMLmode) {
+            logOut(SQLformat, lineNumber, myBuffer);
+        } else {
+            logOut("%s<br>", myBuffer);
+        }
+
+    if (HTMLmode) {
+        logOut("</td></tr>\n");
+    }
+
+
+    }
+
+    debugErr("processPARSEERROR(): Exit.\n");
     return 0;
 }

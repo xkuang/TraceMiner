@@ -18,9 +18,9 @@ There is no license, just use it and abuse it as you see fit. Just leave my copy
 `TraceMiner [options] <trace_file.trc [ >report_file.txt ] [ 2>error_file.txt ]`
 
 ### Options
-  - --verbose | -v   : Produces lots of output to the stderr channel. Best avoided!
-  - --html | -m      : Anything written to stdout will be in html format.
-  - --help | -h | -? : Or any other incorrect option, displays brief help to the stdout channel.
+  - `--verbose` | `-v`     : Produces lots of output to the stderr channel. Best avoided!
+  - `--html` | `-m`        : Anything written to stdout will be in html format.
+  - `--help` | `-h` | `-?` : Or any other incorrect option, displays brief help to the stdout channel.
 
 ## Compiling
 Before compiling, check the section below on configuration. It might prove useful!
@@ -32,12 +32,25 @@ There are two folders, `Debug` and `Release` with a suitable makefiles named `Ma
 The following compilation instructions assume that you downloaded the zip file from GitHub, and have unzipped it somewhere:
 
 
-### Compiling with the Qt Creator IDE
+### Compiling with Visual Studio on Windows
+I tried, honest I did! It seems that from version 2005 of Visual Studio, or _probably_ before, the compiler hasn't been updated. It really doesn't like declarations of variables anywhere after lines of code, so all variables have to be declared _at the top_ of the function(s). Quite honestly, I can't be bothered, but I may persevere if I'm ever bored.
+
+Additionally, the GNU function `get_line()` is not available on Windows anyway, although there are versions out  there in the wild that carry out the same/similar functionality that could be used. I have tried this out and I have a version that sort of runs ok, but it randomly aborts at different places in the code for no reason. Running it via the debugger doesn't help as it runs fine in debug mode. Sigh.
+
+I gave up in the end and installed Linux Mint 18 (Sarah) into a VirtualBox VM on my desktop, and used that to compile and run the code on. All I had to do was get my trace files onto the VM - easy using shared folders. Much easier.
+
+### Compiling with Mingw on Windows
+This too has problems, which is surprising as it's supposedly GNU compatible. It cannot find the `get_line()` function even though `_GNU_SOURCE` has been defined, which is supposed to make it work. It doesn't so far. More work required to find out why I'm afraid.
+
+I'm actually beginning to think that a Java version on Windows might be the best option.
+
+
+### Compiling with the Qt Creator IDE on Linux
 If you use Qt Creator, simply open the project file `TraceMiner-master\TraceMiner\TraceMiner.pro` and compile in the usual manner after selecting the `Debug` or `Release` build option as desired.
 
 
-### Compiling with Qt on the Command Line
-You can, if you have Qt installed, use the default `Makefile` to compile the utility from the command line.
+### Compiling with Qt on the Command Line on Linux
+You can, if you have Qt installed, use the default `Makefile` to compile the utility from the command line, although you may need to change some paths etc to point at your specific installation of Qt.
 ```
 cd TraceMiner-master/Release
 make
