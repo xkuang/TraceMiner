@@ -1,5 +1,8 @@
 # Trace Miner Updates
 
+### Version 0.15 - 18th August 2016.
+  - PL/SQL assignemnet statements, ':=', are NOT bind variables. Duh! Fixed this nasty bug.
+
 ### Version 0.14 - 21st July 2016.
   - Added checks for PARSE ERROR lines. Prints the error code and the failing SQL at _any_ dep=n.
 
