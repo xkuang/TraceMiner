@@ -31,6 +31,20 @@ There are two folders, `Debug` and `Release` with a suitable makefiles named `Ma
 
 The following compilation instructions assume that you downloaded the zip file from GitHub, and have unzipped it somewhere:
 
+### Copiling with the Free Embarcadero (Borland) C++ Compiler.
+
+**You will need to have the source code for version 0.16 or higher to compile it with Borland tools.**
+
+If you go to https://www.embarcadero.com/free-tools, you can download the free Borland C++ compiler, version 10.1. Download it somewhere and unzip it. Add the resulting `bcc101\bin` folder to your path, and you are ready to go.
+
+Building is easy:
+
+```
+cd TraceMiner-master/Release
+build.Borland
+```
+
+This will create a 32 bit executable called `TraceMiner.exe` in the `Release` folder. The free compiler generated 32 bit executables.
 
 ### Compiling with Visual Studio on Windows
 I tried, honest I did! It seems that from version 2005 of Visual Studio, or _probably_ before, the compiler hasn't been updated. It really doesn't like declarations of variables anywhere after lines of code, so all variables have to be declared _at the top_ of the function(s). Quite honestly, I can't be bothered, but I may persevere if I'm ever bored.

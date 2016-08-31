@@ -1,5 +1,9 @@
 # Trace Miner Updates
 
+### Version 0.16 - 31st August 2016.
+  - Now compiles on Windows with the latest free Borland C++ Compiler.
+  - Minor bug fix. The sqlBinds array was defined in multiple places due to a silly (beginner!) C error in typing. Sigh. 
+
 ### Version 0.15 - 18th August 2016.
   - PL/SQL assignemnet statements, ':=', are NOT bind variables. Duh! Fixed this nasty bug.
 
