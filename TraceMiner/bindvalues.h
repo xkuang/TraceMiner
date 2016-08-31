@@ -6,8 +6,5 @@ typedef struct bindValues {
     char bv[MAXBINDS][MAXBINDSIZE+1];
 } bindValues;
 
-// This is where the results go, hopefully.
-bindValues sqlBinds;
-
 
 #endif

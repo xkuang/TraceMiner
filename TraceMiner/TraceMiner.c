@@ -12,10 +12,17 @@
 #include <string.h>
 #include <stdarg.h>
 
+// Using the free Borland C++ v10.1 compiler?
+// This needs to go before utils.h.
+#include "borlandc.h"
+
 #include "utils.h"
 #include "config.h"
 #include "linkedList.h"
 #include "bindvalues.h"
+
+// This is where the bind results go, hopefully.
+bindValues sqlBinds;
 
 int processPARSING();
 int processBINDS();
@@ -25,7 +32,7 @@ int processPARSEERROR();
 
 
 // Version number.
-const float version = 0.15;
+const float version = 0.16;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will

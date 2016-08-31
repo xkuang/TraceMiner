@@ -1,4 +1,9 @@
 #include <ctype.h>
+
+// Using the free Borland C++ v10.1 compiler?
+// This needs to go before utils.h.
+#include "borlandc.h"
+
 #include "utils.h"
 
 // Required for getLine() etc.

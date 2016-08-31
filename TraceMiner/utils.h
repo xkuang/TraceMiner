@@ -9,6 +9,7 @@
 #include "linkedList.h"
 #include "bindvalues.h"
 
+extern bindValues sqlBinds;
 extern long lineNumber;
 extern int debugging;
 
