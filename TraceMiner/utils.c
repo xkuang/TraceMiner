@@ -220,12 +220,13 @@ int convertSQLBinds(char *sqlStatement)
     // Scan the SQL looking for a colon. This indicates a bind variable.
     // After the first one, we have to adjust the rest of the buffer to
     // strip out the meaningful names and replace them with "%s" instead
-    // of ":variable_name".
+    // of ":variable_name". Ignore ":=" though, that's PL/SQL not a bind.
     // Also, to allow the HTML output table to adjust to the browser width,
     // a space will be inserted into the output SQL statement.
     while (*from) {
-        if (*from == ':') {
+        if (*from == ':' && *(from + 1) != '=') {
             // First bind variable has been found.
+            debugErr("convertSQLBinds(): Found first ':' - followed by '%c'\n", *(from + 1));
             gotBinds = 1;
             break;
         }
@@ -254,19 +255,27 @@ int convertSQLBinds(char *sqlStatement)
             *to++ = *from++;
         } else {
             // Found a colon, it's a[nother] bind variable.
-            bindCount++;
+            debugErr("convertSQLBinds(): Found next ':' - followed by '%c'\n", *(from + 1));
 
-            // Skip past the bind in the input buffer.
-            // Are there any other characters that could go here I wonder?
-            while (*from &&
-                   *from != ' ' &&
-                   *from != ')' &&
-                   *from != ',' &&
-                   *from != '\n') from++;
+            if (*(from + 1) != '=') {
+                // We have a valid bind variable.
+                bindCount++;
 
-            // Manipulate the output buffer.
-            *to++ = '%';
-            *to++ = 's';
+                // Skip past the bind in the input buffer.
+                // Are there any other characters that could go here I wonder?
+                while (*from &&
+                       *from != ' ' &&
+                       *from != ')' &&
+                       *from != ',' &&
+                       *from != '\n') from++;
+
+                // Manipulate the output buffer.
+                *to++ = '%';
+                *to++ = 's';
+            } else {
+                // We have a PL/SQL ':=' assignment statement. Ignore it.
+                *to++ = *from++;
+            }
         }
     }
 

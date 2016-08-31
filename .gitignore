@@ -1,5 +1,7 @@
 *.o
 *.trc
+*.dbg
+*.log
 *.user
 *.user.*
 errors.txt
