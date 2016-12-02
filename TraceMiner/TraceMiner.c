@@ -28,11 +28,12 @@ int processPARSING();
 int processBINDS();
 int processEXEC();
 int processXCTEND();
+int processERROR();
 int processPARSEERROR();
 
 
 // Version number.
-const float version = 0.18;
+const float version = 0.19;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will
@@ -219,6 +220,13 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        if (strncmp(myBuffer, "ERROR", 5) == 0) {
+            didItWork = processERROR();
+            if (didItWork < 0)
+                return 1;
+            continue;
+        }
+        
         if (strncmp(myBuffer, "PARSE ERROR", 11) == 0) {
             didItWork = processPARSEERROR();
             if (didItWork < 0)
@@ -497,6 +505,39 @@ int processXCTEND()
         logOut(format, lineNumber, "ROLLBACK");
     }
     debugErr("processXCTEND(): Exit.\n");
+    return 0;
+}
+
+
+//=================================================================== PROCESSERROR
+// Is this line an (exec) ERROR line?
+// ERROR #275452960:err=31013 tim=1075688943194
+//=================================================================== PROCESSERROR
+int processERROR()
+{
+    debugErr("processERROR(): Entry for line %d.\n", lineNumber);
+
+    static char HTMLformat[] = {"<tr><td> ERROR </td><td> EXEC ERROR </td><td align=\"right\">%ld</td><td>***** %s *****"};
+    static char TEXTformat[] = {"\n ERROR    : EXEC ERROR       : %10ld : ***** %s *****\n\n"};
+    char *format;
+
+    if (!HTMLmode)
+        format = TEXTformat;
+    else
+        format = HTMLformat;
+
+	int x;
+
+    // Need to zap the linefeed!
+    myBuffer[strlen(myBuffer) - 1] = '\0';
+    debugErr("processERROR(): %s\n", myBuffer);
+    logOut(format, lineNumber, myBuffer);
+
+    if (HTMLmode) {
+        logOut("</td></tr>\n");
+    }
+
+    debugErr("processERROR(): Exit.\n");
     return 0;
 }
 

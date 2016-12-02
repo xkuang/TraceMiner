@@ -1,8 +1,10 @@
 # Trace Miner Updates
 
-### Version 0.18 - 2nd December 2016.
-  - Interesting bug, seemingly related to DBMS_METADATA.GET_CLOB calls where the value for one bind is the bund number of the next one. The text is "value= Bind#" and is weird!
+### Version 0.19 - 2nd December 2016.
+  - Busy day today! The utility now notices exec ERROR lines as well as PARSE ERRORs.
 
+### Version 0.18 - 2nd December 2016.
+  - Interesting bug, seemingly related to DBMS_METADATA.GET_CLOB calls where the value for one bind is the bind number of the next one. The text is "value= Bind#" and is weird!
 
 ### Version 0.17 - 2nd December 2016.
   - Added test.cmd. Test harness for Windows users.
