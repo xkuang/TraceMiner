@@ -519,6 +519,23 @@ char *getOneBindValue()
     while (isspace(*valueToken))
         valueToken++;
 
+    // This is a weird on, seen on Windows once so far.
+    // The value= line has no value but the following BIND# line 
+    // is included. This is exactly as extracted from a trace file:
+    // "value= Bind#1". Spooky. And it messes things up!
+    // Better we check, and barf.
+    if (!strncmp(valueToken, "value= Bind#", 12)) {
+        debugErr("getOneBindValue(): We have a corrupted trace file.\n");
+        debugErr("\t\tDetected \"value= Bind#\" at line %d\n", lineNumber);
+        debugErr("\t\tPlease fix the line by inserting a carriage Return after the '=' and before the space.\n");
+        logOut("getOneBindValue(): We have a corrupted trace file.\n");
+        logOut("\t\tDetected \"value= Bind#\" at line %d\n", lineNumber);
+        logOut("\t\tPlease fix the line by inserting a carriage Return after the '=' and before the space.\n");
+        
+        return NULL;
+    }
+    
+    
     char *thisValue = extractValue(bindType, valueToken);
 
     // Data types 25 and 29 are unhandled in the Trace File (it says so!)

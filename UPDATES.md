@@ -1,5 +1,9 @@
 # Trace Miner Updates
 
+### Version 0.18 - 2nd December 2016.
+  - Interesting bug, seemingly related to DBMS_METADATA.GET_CLOB calls where the value for one bind is the bund number of the next one. The text is "value= Bind#" and is weird!
+
+
 ### Version 0.17 - 2nd December 2016.
   - Added test.cmd. Test harness for Windows users.
   - Sort of fixed the problem where a bind can be used more than once in a statement. Flagged in the SQL as "__A_:BIND_REUSED__" at the moment.
