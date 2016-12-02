@@ -1,5 +1,9 @@
 # Trace Miner Updates
 
+### Version 0.17 - 2nd December 2016.
+  - Added test.cmd. Test harness for Windows users.
+  - Sort of fixed the problem where a bind can be used more than once in a statement. Flagged in the SQL as "__A_:BIND_REUSED__" at the moment.
+
 ### Version 0.16 - 31st August 2016.
   - Now compiles on Windows with the latest free Borland C++ Compiler.
   - Minor bug fix. The sqlBinds array was defined in multiple places due to a silly (beginner!) C error in typing. Sigh. 
