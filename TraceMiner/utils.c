@@ -401,7 +401,7 @@ all_done:
 //=============================================================== GETBINDVALUES
 // Extract the bind variable values. It seems to be a section
 // of the trace file that begins with one space, then we have Bind#n,
-// then details of that bind are indended by two spaces.
+// then details of that bind are indented by two spaces.
 // We need to process different bind types differently.
 // Oh, and you cannot rely on the "mxl(nn)" stuff for max length(used length)
 // because they tell lies sometimes, but not always.
@@ -474,7 +474,17 @@ char *getOneBindValue()
 
     bytesRead = getLine();
     dtyToken = getFirstToken(myBuffer);
+    
+    // Need to see if a bind variable has been defined already and is used
+    // more than once in the same statement. This is determined by reading
+    // "   No oacdef for this bind." as the first line after the BIND# line.
+    if (!strncmp(dtyToken, "No", 2)) {
+        // Looks like a bind has been used more than once. Hmmm.
+        debugErr("getOneBindValue(): Bind variable reused");
+        return "\"__A_:BIND_REUSED__\"";
+    }
 
+    // Bind is not a reused one, carry on.
     if (strncmp(dtyToken, "oacdty=", 7) == 0) {
         bindType = atoi(dtyToken+7);
         debugErr("getOneBindValue(): Bind data type is %d.\n", bindType);
@@ -500,7 +510,14 @@ char *getOneBindValue()
 
     // Get the "value=" line.
     bytesRead = getLine();
-    valueToken = getFirstToken(myBuffer);
+    
+    //This doesn't work for strings with spaces in. 
+    //valueToken = getFirstToken(myBuffer);
+    
+    // This is a fix for the above.
+    valueToken=myBuffer;
+    while (isspace(*valueToken))
+        valueToken++;
 
     char *thisValue = extractValue(bindType, valueToken);
 
@@ -510,7 +527,7 @@ char *getOneBindValue()
     if (bindType == 25 || bindType == 29) {
         debugErr("getOneBindValue(): Type %d, unhandled bind type: Resync required...\n", bindType);
 
-        // Resync up to the fisrt line with a '[' in it.
+        // Resync up to the first line with a '[' in it.
         while (bytesRead != -1) {
             bytesRead = getLine();
             if (strchr(myBuffer, '[') )
