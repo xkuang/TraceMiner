@@ -30,10 +30,11 @@ int processEXEC();
 int processXCTEND();
 int processERROR();
 int processPARSEERROR();
+int processCLOSE();
 
 
 // Version number.
-const float version = 0.19;
+const float version = 0.20;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will
@@ -168,7 +169,7 @@ int main(int argc, char *argv[])
     headNode->cursorId[9] = '\0';
     headNode->bindsPerExec = -1;
     headNode->lineNumber = -1;
-    headNode->sqlText = NULL;
+    headNode->sqlText = "\n"; // So that listDisplay() prints correctly.
     headNode->next = NULL;
 
     // Here's the main loop. We read and process lines until error or EOF.
@@ -208,6 +209,13 @@ int main(int argc, char *argv[])
 
         if (strncmp(myBuffer, "EXEC", 4) == 0) {
             didItWork = processEXEC();
+            if (didItWork < 0)
+                return 1;
+            continue;
+        }
+
+        if (strncmp(myBuffer, "CLOSE", 5) == 0) {
+            didItWork = processCLOSE();
             if (didItWork < 0)
                 return 1;
             continue;
@@ -355,7 +363,7 @@ int processPARSING()
     // Don't overflow!
     if (binds > MAXBINDS) {
         logErr("\n\nprocessPARSING(): FATAL ERROR:\n");
-        logErr("processPARSING(): CursorID '%s' has %d bind variables. This exceeds the\n", newNode->cursorId);
+        logErr("processPARSING(): CursorID '%s' has %d bind variables. This exceeds the\n", newNode->cursorId, binds);
         logErr("                  current maximum of %d compiled into the program.\n", MAXBINDS);
         logErr("                  You must edit file 'config.h' and increase MAXBINDS to at least %d, then recompile.\n", binds);
         return -1;
@@ -611,3 +619,44 @@ int processPARSEERROR()
     debugErr("processPARSEERROR(): Exit.\n");
     return 0;
 }
+
+//================================================================ PROCESSCLOSE
+// Is this line a CLOSE #cursor_id line then?
+// CLOSE #575668312:c=0,e=20,dep=0,type=0,tim=2302156605232
+//================================================================ PROCESSCLOSE
+int processCLOSE()
+{
+    debugErr("processCLOSE(): Entry for line %d.\n", lineNumber);
+
+    char *depthToken;
+	char *cursorToken = getFirstToken(myBuffer);      // Skip 'CLOSE'.
+    cursorToken = getNextToken();                     // Get the cursor ID.
+    
+    // What depth are we here?
+    for (int x = 0; x < 3; x++) {
+        depthToken = getNextToken();                // Get the depth
+    }
+
+    // Recursive SQL? Bale out if so.
+    if (strncmp(depthToken, "dep=0", 5) != 0) {
+        debugErr("processEXEC(): Reursive SQL: Exit.\n");
+        return 0;
+    }
+
+    // We should have this cursor in list, error out if not found.
+    cursorNode *temp = listFind(headNode, cursorToken);
+    if (temp == NULL) {
+        debugErr("processCLOSE(): CursorID '%s', not found in list.\n", cursorToken);
+        debugErr("processCLOSE(): Cursor not found in list: Exit.\n");
+        return -1;
+    }
+
+    debugErr("processCLOSE(): CursorID '%s', found in list node %p.\n", cursorToken, temp);
+
+    // We have it, so delete it.
+    listDelete(headNode, temp);
+    debugErr("processCLOSE(): Exit.\n");
+    return 0;
+}
+
+

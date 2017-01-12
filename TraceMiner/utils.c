@@ -302,14 +302,14 @@ int convertSQLBinds(char *sqlStatement)
 char *extractValue(int dataType, char *text)
 {
     debugErr("extractValue(): Entry\n");
-    debugErr("extractvalue(): dataType=%d, text='%s'.\n", dataType, text);
+    debugErr("extractValue(): dataType=%d, text='%s'.\n", dataType, text);
 
     static char buffer[MAXBINDSIZE+1];
     int pseudoDataType = dataType;          // Sometimes I need a different type
 
     // Is the data string long enough?
     int dataSize = strlen(text);            // Actual data type of the bind
-    if (dataSize < 7) {
+    if (dataSize < 7) {                     // Must be "value=" or something broken!
         debugErr("extractValue(): dataSize too small (%d): Exit\n", dataSize);
         return NULL;
     }
@@ -363,7 +363,9 @@ char *extractValue(int dataType, char *text)
         // NCHAR/NVARCHAR2 types need special treatment. The line is something like
         // value=0 nn 0 nn 0 nn ... and we simply ignore the zeros. We can walk the text using tokens.
 
-        char *nextToken = getNextToken();
+        // We MUST getFirstToken() before getNextToken() as we have a new line!
+        char *nextToken = getFirstToken(text);
+        //char *nextToken = getNextToken();
 
         // Leading quote, and trailing, reduce available space by 2.
         buffer[offset++] = '\'';
@@ -444,7 +446,8 @@ int getBindValues(cursorNode *temp, bindValues *bValues)
 //============================================================= GETONEBINDVALUE
 char *getOneBindValue()
 {
-    debugErr("getOneBindValue(): Entry.\nMyBuffer:%s", myBuffer);
+    debugErr("getOneBindValue(): Entry.\n");
+    debugErr("getOneBindValue(): Buffer='%s'\n", myBuffer);
 
     char *dtyToken;
     char *valueToken;
@@ -464,7 +467,7 @@ char *getOneBindValue()
         }
     }
 
-    debugErr("getOneBindValue(): Line buffer is:\n%s.", myBuffer);
+    debugErr("getOneBindValue(): myBuffer'%s'\n", myBuffer);
 
     if (strncmp(myBuffer, " Bind#", 6) != 0) {
         logErr("getOneBindValue() did not read the \"Bind#n\" line when expected.\n");
@@ -516,6 +519,8 @@ char *getOneBindValue()
     
     // This is a fix for the above.
     valueToken=myBuffer;
+    debugErr("getOneBindValue(): valueToken='%s'\n", valueToken);
+    
     while (isspace(*valueToken))
         valueToken++;
 
@@ -535,8 +540,9 @@ char *getOneBindValue()
         return NULL;
     }
     
-    
+    debugErr("getOneBindValue(): About to extractValue() from '%s'\n", valueToken);
     char *thisValue = extractValue(bindType, valueToken);
+    debugErr("getOneBindValue(): got value '%s' from '%s'\n", thisValue, valueToken);
 
     // Data types 25 and 29 are unhandled in the Trace File (it says so!)
     // We need to resync the buffer to the next bind which means reading
