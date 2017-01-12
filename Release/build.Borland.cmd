@@ -8,3 +8,5 @@ bcc32c -o TraceMiner.exe ..\TraceMiner\*.c
 if exist "TraceMiner.tds" (
     @del "TraceMiner.tds" 2 > nul
 )
+
+pause
