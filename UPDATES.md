@@ -1,5 +1,12 @@
 # Trace Miner Updates
 
+### Version 0.21 - 12th January 2017.
+  - Default for MAXBINDS changed from 50 to 150 to account for SQL with lots of binds. 50 was being hit too frequently for comfort.
+  - Reminder added to the STDOUT file when we hit a limit. It was only in the STDERR file, and only then, when running in verbose mode.
+  - Bugger it! When a cursor is CLOSEd version 0.20 deleted the node from the list. However, it seems that Oracle also re-parses the same SQL with a PARSE #CURSOR_ID, rather than a PARSING IN CURSOR action. At least, on AIX anyway. Sigh. This caused subsequent EXECs to barf as the cursor was not found.
+  - Data type 96 can, under a few circumstances, emit more than a single line for the hex codes of the bind's value. Code now ignores the subsequent lines and only processes the first, as before, but now resynchronises with the trace file before processing the next bind's value.
+  - segfault detected when in verbose mode, at the end of a huge trace file, during the listClear() call. Fixed. Caused by the conversion of a bind from ":a" to "%s" - or so it seems!
+
 ### Version 0.20 - 12th January 2017.
   - Intermittent bug fixed when parsing data for type 96 binds.
   - Now processes cursor CLOSE actions.

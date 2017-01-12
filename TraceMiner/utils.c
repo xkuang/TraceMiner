@@ -176,7 +176,8 @@ char *getSQLStatement(size_t statementLength)
     // in the trace file, plus an extra allowance for those trace files, such as
     // Rich's, where the tables etc have been obfuscated and the length no longer
     // matches that in the PARSING IN CURSOR line. :-)
-    size_t sqlLength = statementLength + OFFSETFORRICH;
+    // I also add on a little  extra, for luck!
+    size_t sqlLength = statementLength + OFFSETFORRICH + MAXBINDS;
 
     // Allocate a buffer for the whole SQL statement.
     // WARNING: It is the caller's job to free() this buffer
@@ -365,7 +366,6 @@ char *extractValue(int dataType, char *text)
 
         // We MUST getFirstToken() before getNextToken() as we have a new line!
         char *nextToken = getFirstToken(text);
-        //char *nextToken = getNextToken();
 
         // Leading quote, and trailing, reduce available space by 2.
         buffer[offset++] = '\'';
@@ -459,7 +459,13 @@ char *getOneBindValue()
     // If the previous bind was type 25 or 29 then we are already at the
     // correct buffer line and there's no need to read it again. We only
     // need a single additional line from the trace file otherwise.
-    if (strncmp(myBuffer, " Bind#", 6) != 0) {
+    //
+    // Version 0.21.
+    // If the previous bind was a type 96, and a long width too, then it's
+    // possible that Oracle emitted more than one line of values in hex. We need to 
+    // just read until we find a " Bind#" line. (AIX only so far ...)
+    while (strncmp(myBuffer, " Bind#", 6) != 0) {
+        debugErr("getOneBindValue(): Attempting to resynchronise...\n");
         bytesRead = getLine();
         if (bytesRead == -1) {
             debugErr("getOneBindValue(): END OF FILE detected early.");
@@ -614,7 +620,7 @@ void printExecDetails(cursorNode *node)
 
     // If config.h has MAXBINDS set to 'n', then there must be v->bv[0] through
     // v->bv[n-1] in the following. No more, no less.
-    // By default this is 50, so we have bv[0] through bv[49] below.
+    // By default this is 150, so we have bv[0] through bv[149] below.
     bindValues *v = &sqlBinds;
     logOut(formatText, lineNumber, node->cursorId, node->lineNumber,
            v->bv[0],  v->bv[1],  v->bv[2],  v->bv[3],  v->bv[4],
@@ -626,7 +632,29 @@ void printExecDetails(cursorNode *node)
            v->bv[30], v->bv[31], v->bv[32], v->bv[33], v->bv[34],
            v->bv[35], v->bv[36], v->bv[37], v->bv[38], v->bv[39],
            v->bv[40], v->bv[41], v->bv[42], v->bv[43], v->bv[44],
-           v->bv[45], v->bv[46], v->bv[47], v->bv[48], v->bv[49]);
+           v->bv[45], v->bv[46], v->bv[47], v->bv[48], v->bv[49],
 
+           v->bv[50], v->bv[51], v->bv[52], v->bv[53], v->bv[54],
+           v->bv[55], v->bv[56], v->bv[57], v->bv[58], v->bv[59],
+           v->bv[60], v->bv[61], v->bv[62], v->bv[63], v->bv[64],
+           v->bv[65], v->bv[66], v->bv[67], v->bv[68], v->bv[69],
+           v->bv[70], v->bv[71], v->bv[72], v->bv[73], v->bv[74],
+           v->bv[75], v->bv[76], v->bv[77], v->bv[78], v->bv[79],
+           v->bv[80], v->bv[81], v->bv[82], v->bv[83], v->bv[84],
+           v->bv[85], v->bv[86], v->bv[87], v->bv[88], v->bv[89],
+           v->bv[90], v->bv[91], v->bv[92], v->bv[93], v->bv[94],
+           v->bv[95], v->bv[96], v->bv[97], v->bv[98], v->bv[99],
+
+           v->bv[100], v->bv[101], v->bv[102], v->bv[103], v->bv[104],
+           v->bv[105], v->bv[106], v->bv[107], v->bv[108], v->bv[109],
+           v->bv[110], v->bv[111], v->bv[112], v->bv[113], v->bv[114],
+           v->bv[115], v->bv[116], v->bv[117], v->bv[118], v->bv[119],
+           v->bv[120], v->bv[121], v->bv[122], v->bv[123], v->bv[124],
+           v->bv[125], v->bv[126], v->bv[127], v->bv[128], v->bv[129],
+           v->bv[130], v->bv[131], v->bv[132], v->bv[133], v->bv[134],
+           v->bv[135], v->bv[136], v->bv[137], v->bv[138], v->bv[139],
+           v->bv[140], v->bv[141], v->bv[142], v->bv[143], v->bv[144],
+           v->bv[145], v->bv[146], v->bv[147], v->bv[148], v->bv[149]);
+  
     debugErr("printExecDetails(): Exit for node %p.\n", node);
 }

@@ -31,10 +31,11 @@ int processXCTEND();
 int processERROR();
 int processPARSEERROR();
 int processCLOSE();
+int processPARSE();
 
 
 // Version number.
-const float version = 0.20;
+const float version = 0.21;
 
 // We need the buffer in lots of places, so make it global.
 size_t bufferSize = 2048;       // Seems adequate for a buffer. Getline will
@@ -221,6 +222,13 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        if (strncmp(myBuffer, "PARSE ", 6) == 0) {
+            didItWork = processPARSE();
+            if (didItWork < 0)
+                return 1;
+            continue;
+        }
+
         if (strncmp(myBuffer, "XCTEND", 6) == 0) {
             didItWork = processXCTEND();
             if (didItWork < 0)
@@ -250,16 +258,17 @@ int main(int argc, char *argv[])
     }
 
     // If we are debugging, dump the entire linked list.
-    if (debugging) {
-        debugErr("\n\nTree List\n");
-        listDisplay(headNode);                         // Dump the entire list.
-    }
+    //if (debugging) {
+    //    debugErr("\n\nTree List\n");
+    //    listDisplay(headNode);                         // Dump the entire list.
+    //}
 
     // Clear the list and free all allocated memory. It's
     // not strictly necessary, as the OS //should// do it
     // on exit. But I'm old school!
     debugErr("\n\nTree Felling in Progress. HeadNode = %p.\n", headNode);
     listClear(headNode);
+    debugErr("\n\nDeforestation complete. Clear felled.\n\n");
 
     // Job done, no errors, bale out.
     return 0;
@@ -300,10 +309,12 @@ int processPARSING()
 
     // Is the cursor id too big?
     if (strlen(cursorToken) > MAXCURSORSIZE) {
-        logErr("\n\nprocessPARSING(): FATAL ERROR:\n");
-        logErr("processPARSING(): CursorID '%s' has %d characters which has exceeded the current maximum \n", cursorToken, strlen(cursorToken));
-        logErr("                  of %d compiled into the program.\n", MAXCURSORSIZE);
-        logErr("                  You must edit file 'config.h' and increase MAXCURSORSIZE to at least %d, then recompile.\n", strlen(cursorToken));
+        logOut("\n\nprocessPARSING(): FATAL ERROR:\n");
+        logOut("processPARSING(): CursorID '%s' has %d characters which has exceeded the current maximum \n", cursorToken, strlen(cursorToken));
+        logOut("                  of %d compiled into the program.\n", MAXCURSORSIZE);
+        logOut("                  You must edit file 'config.h' and increase MAXCURSORSIZE to at least %d.\n", strlen(cursorToken));
+        logOut("                  You must then edit file 'utils.c' and amend function 'printExecDetails()' to match.\n", strlen(cursorToken));
+        logOut("                  Then, recompile.\n\n");
         return -1;
     }
 
@@ -340,8 +351,10 @@ int processPARSING()
                 debugErr("processPARSING(): newNode at %p is for cursorID '%s'.\n", newNode, newNode->cursorId);
     }
 
-    newNode->bindsPerExec = 0    ;          // Number of binds per exec.
+    newNode->closed = 0;                    // And assume we have an open cursor.
+    newNode->bindsPerExec = 0;              // Number of binds per exec.   
     debugErr("processPARSING(): newNode at %p assuming no binds for now.\n", newNode);
+
     newNode->lineNumber = sqlLineNumber;    // Where we found it.
     debugErr("processPARSING(): newNode at %p, cursorID '%s', for SQL at line %ld.\n", newNode, newNode->cursorId, newNode->lineNumber);
 
@@ -362,10 +375,10 @@ int processPARSING()
 
     // Don't overflow!
     if (binds > MAXBINDS) {
-        logErr("\n\nprocessPARSING(): FATAL ERROR:\n");
-        logErr("processPARSING(): CursorID '%s' has %d bind variables. This exceeds the\n", newNode->cursorId, binds);
-        logErr("                  current maximum of %d compiled into the program.\n", MAXBINDS);
-        logErr("                  You must edit file 'config.h' and increase MAXBINDS to at least %d, then recompile.\n", binds);
+        logOut("\n\nprocessPARSING(): FATAL ERROR:\n");
+        logOut("processPARSING(): CursorID '%s' has %d bind variables. This exceeds the\n", newNode->cursorId, binds);
+        logOut("                  current maximum of %d compiled into the program.\n", MAXBINDS);
+        logOut("                  You must edit file 'config.h' and increase MAXBINDS to at least %d, then recompile.\n", binds);
         return -1;
     }
 
@@ -639,7 +652,7 @@ int processCLOSE()
 
     // Recursive SQL? Bale out if so.
     if (strncmp(depthToken, "dep=0", 5) != 0) {
-        debugErr("processEXEC(): Reursive SQL: Exit.\n");
+        debugErr("processCLOSE(): Recursive SQL: Exit.\n");
         return 0;
     }
 
@@ -654,8 +667,55 @@ int processCLOSE()
     debugErr("processCLOSE(): CursorID '%s', found in list node %p.\n", cursorToken, temp);
 
     // We have it, so delete it.
-    listDelete(headNode, temp);
+    // NOT ANY MORE (Version 0.21) - we just mark it as closed. 
+    // It may be re-opened by processPARSE().
+    //listDelete(headNode, temp);
+    temp->closed = 1;
+
+    debugErr("processCLOSE(): Cursor #%s closed.\n", cursorToken);
     debugErr("processCLOSE(): Exit.\n");
+    return 0;
+}
+
+
+//================================================================ PROCESSPARSE
+// Is this line a PARSE #cursor_id line then?
+// PARSE #4573723560:c=5,e=9,p=0,cr=0,cu=0,mis=0,r=0,dep=0, ...
+//================================================================ PROCESSPARSE
+int processPARSE()
+{
+    debugErr("processPARSE(): Entry for line %d.\n", lineNumber);
+
+    char *depthToken;
+	char *cursorToken = getFirstToken(myBuffer);      // Skip 'PARSE'.
+    cursorToken = getNextToken();                     // Get the cursor ID.
+    
+    // What depth are we here?
+    for (int x = 0; x < 8; x++) {
+        depthToken = getNextToken();                // Get the depth
+    }
+
+    // Recursive SQL? Bale out if so.
+    if (strncmp(depthToken, "dep=0", 5) != 0) {
+        debugErr("processPARSE(): Recursive SQL: Exit.\n");
+        return 0;
+    }
+
+    // We MUST have this cursor in the list, error out if not found.
+    cursorNode *temp = listFind(headNode, cursorToken);
+    if (temp == NULL) {
+        debugErr("processPARSE(): CursorID '%s', not found in list.\n", cursorToken);
+        debugErr("processPARSE(): Cursor not found in list: Exit.\n");
+        return -1;
+    }
+
+    debugErr("processPARSE(): CursorID '%s', found in list node %p.\n", cursorToken, temp);
+
+    // We have it, so re-open it.
+    temp->closed = 0;
+
+    debugErr("processPARSE(): Cursor #%s reopened.\n", cursorToken);
+    debugErr("processPARSE(): Exit.\n");
     return 0;
 }
 

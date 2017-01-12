@@ -8,6 +8,7 @@ typedef struct cursorNode {
     char *sqlText;                      // SQL text, stripped of binds.
     int bindsPerExec;                   // How many binds required for each EXEC?
     long lineNumber;                    // Which trace file line was the SQL found?
+    short closed;                       // Has the cursor been closed?
     struct cursorNode *next;            // Next cursorNode in this list.
 } cursorNode;
 
@@ -17,6 +18,7 @@ void listClear(cursorNode *headNode);
 void listDisplay(cursorNode *headNode);
 cursorNode *listFind(cursorNode *headNode, char *cursorID);
 void listDelete(cursorNode *headNode, cursorNode *me);
+void nodeDisplay(cursorNode *me);
 
 #endif
 

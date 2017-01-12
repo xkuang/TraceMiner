@@ -88,10 +88,19 @@ void listClear(cursorNode *headNode)
     temp = headNode;
     while (temp != NULL) {
         debugErr("listClear(): Clearing node at %p. Cursor#: %s.\n", temp, temp->cursorId);
+        if (debugging)
+            nodeDisplay(temp);
+        
         right = temp->next;
-        if (temp->sqlText)
+        if (temp->sqlText) {
+            debugErr("listClear(): Node %p, freeing SQL space at %p.\n", temp, temp->sqlText);
             free (temp->sqlText);           // Free memory for the SQL text.
+        }
+        
+        debugErr("listClear(): Node %p, Next = %p, about to die!.\n", temp, right);
         free (temp);                        // Free memory for the node.
+        debugErr("listClear(): Node %p, RIP.\n\n", temp);
+
         temp = right;
     }
     debugErr("listClear(): Exit.\n");
@@ -110,12 +119,7 @@ void listDisplay(cursorNode *headNode)
     temp = headNode;
     debugErr("listDisplay():Dumping headNode %p.\n", temp);
     while (temp != NULL) {
-        debugErr("\nCursorNode %p:\n", temp);
-        debugErr("Cursor: %s\n", temp->cursorId);
-        debugErr("Binds: %d\n", temp->bindsPerExec);
-        debugErr("Line number: %ld\n", temp->lineNumber);
-        debugErr("SQL: %s", temp->sqlText);
-        debugErr("Next: %p\n", temp->next);
+        nodeDisplay(temp);
         temp = temp->next;
     }
     debugErr("listDisplay(): Exit.\n");
@@ -171,4 +175,22 @@ void listDelete(cursorNode *headNode, cursorNode *me)
     
     debugErr("listDelete(): Node '%p' not found in list.\n", me);
     debugErr("listDelete(): Not found: Exit.\n");
+}
+
+
+//================================================================= NODEDISPLAY
+// Display details of a node from the list.
+//================================================================= NODEDISPLAY
+void nodeDisplay(cursorNode *me) {
+    debugErr("\nnodeDisplay(): Entry.\n");
+
+    debugErr("\nDisplay CursorNode at address %p:\n", me);
+    debugErr("Cursor: %s\n", me->cursorId);
+    debugErr("Binds: %d\n", me->bindsPerExec);
+    debugErr("Line number: %ld\n", me->lineNumber);
+    debugErr("SQL: %s", me->sqlText);
+    debugErr("Closed?: %s\n", (me->closed) ? "YES" : "NO");
+    debugErr("Next: %p\n", me->next);    
+
+    debugErr("nodeDisplay(): Exit.\n\n");
 }

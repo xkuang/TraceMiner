@@ -2,15 +2,15 @@
 #define __CONFIG_H__
 
 // The maximum number of bind variables in a cursor. The default
-// is 50 binds in any one statement. If the program detects any SQL
-// with more than 50, it will abort with a helpful message telling
+// is 150 binds in any one statement. If the program detects any SQL
+// with more than 150, it will abort with a helpful message telling
 // you what to do.
 //
 // PLEASE NOTE: If you change this value, up or down, then you must
 // change function printExecDetails() in utils.c to match. You need
 // to have v->bv[0] through v->bv[MAXBINDS-1] ONLY, in that function 
 // in the call to logOut().
-#define MAXBINDS 50
+#define MAXBINDS 150
 
 // The default size for the maximum number of characters in any one bind
 // value. The default is 50. This won't stop the program but any bind values
@@ -29,6 +29,6 @@
 // files, it should be reliable and the following value should be zero.
 // If this is non-zero, whatever value is specified is added to the space allocated for
 // SQL statements - the space is the "len=nnn" plus this offset.
-#define OFFSETFORRICH 128
+#define OFFSETFORRICH 0
 
 #endif
