@@ -1,5 +1,9 @@
 # Trace Miner Updates
 
+### Version 0.20 - 12th January 2017.
+  - Intermittent bug fixed when parsing data for type 96 binds.
+  - Now processes cursor CLOSE actions.
+
 ### Version 0.19 - 2nd December 2016.
   - Busy day today! The utility now notices exec ERROR lines as well as PARSE ERRORs.
 
