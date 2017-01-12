@@ -55,7 +55,9 @@ void listAppend(cursorNode *headNode, cursorNode *me)
 }
 
 
+//=================================================================== LISTCOUNT
 // Count the nodes in the list. 
+//=================================================================== LISTCOUNT
 int listCount(cursorNode *headNode)
 {
     debugErr("listCount(): Entry.\n");
@@ -117,4 +119,56 @@ void listDisplay(cursorNode *headNode)
         temp = temp->next;
     }
     debugErr("listDisplay(): Exit.\n");
+}
+
+
+//================================================================== LISTDELETE
+// Remove a node from the list. Not very efficient I admit, but it 
+// works fine. Don't forget to reclaim the space for the SQL code!
+//================================================================== LISTDELETE
+void listDelete(cursorNode *headNode, cursorNode *me)
+{
+    debugErr("listDelete(): Entry.\n");
+
+    cursorNode *temp, *prev;
+
+    debugErr("listDelete(): Looking for node = '%p'.\n", me);
+    temp = prev = headNode;
+    
+    // Don't delete the head node!
+    if (me == headNode) {
+        debugErr("listDelete(): Cannot delete the headNode!!!\n");
+        debugErr("listDelete(): headNode Exit.\n");
+        return;
+    }
+    
+    // Start scanning.
+    while (temp != NULL) {
+        debugErr("listDelete(): Looking for cursor id '%s' at address %p.\n", me->cursorId, temp);
+        if (temp == me) {
+            // Found it!
+            debugErr("listDelete(): Found node %p.\n", temp);
+            
+            // Free the SQL text's memory.
+            if (temp->sqlText) {
+                debugErr("listDelete(): Freeing SQL memory at %p for cursor '%s' .\n", temp->sqlText, me->cursorId);
+                free (temp->sqlText);
+            }
+            
+            // And the node itself.
+            prev->next = temp->next;
+            debugErr("listDelete(): Deleting node at %p.\n", temp);
+            free (temp);
+            
+            debugErr("listDelete(): node deleted: Exit.\n");
+            return;
+        }
+
+        // Keep looking...
+        prev = temp;
+        temp = temp->next;
+    }
+    
+    debugErr("listDelete(): Node '%p' not found in list.\n", me);
+    debugErr("listDelete(): Not found: Exit.\n");
 }

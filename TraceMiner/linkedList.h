@@ -16,6 +16,7 @@ int listCount(cursorNode *headNode);
 void listClear(cursorNode *headNode);
 void listDisplay(cursorNode *headNode);
 cursorNode *listFind(cursorNode *headNode, char *cursorID);
+void listDelete(cursorNode *headNode, cursorNode *me);
 
 #endif
 
